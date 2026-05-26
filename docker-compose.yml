@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: homeops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: homeops
+      POSTGRES_PASSWORD: homeops
+      POSTGRES_DB: homeops
+    ports:
+      - "5432:5432"
+    volumes:
+      - homeops_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  homeops_postgres_data:
