@@ -100,6 +100,8 @@ export interface Task {
   last_completed_at: string | null;
   estimated_minutes: number | null;
   instructions: string | null;
+  requires_parts: boolean;
+  contractor_required: boolean;
   status: TaskStatus;
   created_at: string;
   updated_at: string;
@@ -181,6 +183,17 @@ export interface TaskCreate {
   due_date?: string | null;
   estimated_minutes?: number | null;
   instructions?: string | null;
+  requires_parts?: boolean;
+  contractor_required?: boolean;
+}
+
+export interface LogCreate {
+  title: string;
+  completed_at?: string | null;
+  notes?: string | null;
+  cost_cents?: number | null;
+  performed_by?: string | null;
+  task_id?: string | null;
 }
 
 export interface TaskCompletion {

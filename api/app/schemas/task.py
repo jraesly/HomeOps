@@ -17,6 +17,8 @@ class TaskCreate(BaseModel):
     due_date: date | None = None
     estimated_minutes: int | None = Field(default=None, ge=0)
     instructions: str | None = None
+    requires_parts: bool = False
+    contractor_required: bool = False
     status: TaskStatus = TaskStatus.active
 
 
@@ -30,6 +32,8 @@ class TaskUpdate(BaseModel):
     due_date: date | None = None
     estimated_minutes: int | None = Field(default=None, ge=0)
     instructions: str | None = None
+    requires_parts: bool | None = None
+    contractor_required: bool | None = None
     status: TaskStatus | None = None
 
 
@@ -47,6 +51,8 @@ class TaskRead(ORMModel):
     last_completed_at: datetime | None
     estimated_minutes: int | None
     instructions: str | None
+    requires_parts: bool
+    contractor_required: bool
     status: str
     created_at: datetime
     updated_at: datetime

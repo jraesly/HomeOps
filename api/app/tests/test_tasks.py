@@ -64,6 +64,27 @@ def test_complete_recurring_task_creates_log_and_advances_due_date(
     assert len(logs) == 1
 
 
+def test_task_flags_round_trip(client: TestClient, device_id: str) -> None:
+    task = client.post(
+        f"/devices/{device_id}/tasks",
+        json={
+            "title": "Replace capacitor",
+            "task_type": "service",
+            "requires_parts": True,
+            "contractor_required": True,
+        },
+    ).json()
+    assert task["requires_parts"] is True
+    assert task["contractor_required"] is True
+
+    # Defaults are False when omitted.
+    plain = client.post(
+        f"/devices/{device_id}/tasks", json={"title": "Visual inspection"}
+    ).json()
+    assert plain["requires_parts"] is False
+    assert plain["contractor_required"] is False
+
+
 def test_complete_one_time_task_marks_completed_once(
     client: TestClient, device_id: str
 ) -> None:

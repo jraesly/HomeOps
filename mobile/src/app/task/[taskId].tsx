@@ -27,6 +27,8 @@ export default function TaskDetailScreen() {
 
   const [notes, setNotes] = useState('');
   const [cost, setCost] = useState('');
+  const [performedBy, setPerformedBy] = useState('');
+  const [completedDate, setCompletedDate] = useState('');
 
   if (taskQuery.isLoading) {
     return (
@@ -48,10 +50,19 @@ export default function TaskDetailScreen() {
   const onComplete = () => {
     const dollars = parseFloat(cost);
     const cost_cents = Number.isFinite(dollars) ? Math.round(dollars * 100) : null;
+    // Treat a bare YYYY-MM-DD as midnight UTC so the backend records that day.
+    const completed_at = completedDate.trim()
+      ? `${completedDate.trim()}T00:00:00Z`
+      : null;
     completeTask.mutate(
       {
         taskId: task.id,
-        payload: { notes: notes.trim() || null, cost_cents },
+        payload: {
+          notes: notes.trim() || null,
+          cost_cents,
+          performed_by: performedBy.trim() || null,
+          completed_at,
+        },
       },
       { onSuccess: () => router.back() },
     );
@@ -74,6 +85,16 @@ export default function TaskDetailScreen() {
           />
           {task.estimated_minutes != null ? (
             <MetaRow label="Estimate" value={`${task.estimated_minutes} min`} />
+          ) : null}
+          {task.requires_parts || task.contractor_required ? (
+            <View style={styles.flagRow}>
+              {task.requires_parts ? (
+                <Badge label="Parts needed" color="#7C3AED" />
+              ) : null}
+              {task.contractor_required ? (
+                <Badge label="Contractor" color="#0891B2" />
+              ) : null}
+            </View>
           ) : null}
         </Card>
 
@@ -101,6 +122,18 @@ export default function TaskDetailScreen() {
               onChangeText={setCost}
               keyboardType="numeric"
               placeholder="18.00"
+            />
+            <TextField
+              label="Performed by (optional)"
+              value={performedBy}
+              onChangeText={setPerformedBy}
+              placeholder="e.g. John"
+            />
+            <TextField
+              label="Completed date (YYYY-MM-DD, optional)"
+              value={completedDate}
+              onChangeText={setCompletedDate}
+              placeholder="Defaults to today"
             />
             <Button
               label="Complete Task"
@@ -133,4 +166,5 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 
 const styles = StyleSheet.create({
   doneRow: { paddingVertical: Spacing.three, alignItems: 'center' },
+  flagRow: { flexDirection: 'row', gap: Spacing.two, paddingTop: Spacing.one },
 });

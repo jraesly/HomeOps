@@ -8,6 +8,7 @@ import {
   completeTask,
   createArea,
   createDeviceInRoom,
+  createDeviceLog,
   createHome,
   createRoom,
   createTask,
@@ -27,6 +28,7 @@ import { queryKeys } from './keys';
 import type {
   AreaCreate,
   DeviceCreate,
+  LogCreate,
   RoomCreate,
   TaskCompletion,
   TaskCreate,
@@ -176,6 +178,18 @@ export function useCreateTask(homeId: string, deviceId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+/** Add a manual maintenance log to a device (unplanned repair, etc.). */
+export function useCreateLog(homeId: string, deviceId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: LogCreate) => createDeviceLog(deviceId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.deviceLogs(deviceId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
     },
   });

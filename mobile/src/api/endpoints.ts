@@ -7,6 +7,7 @@ import type {
   DeviceCreate,
   Home,
   HomeCreate,
+  LogCreate,
   MaintenanceLog,
   Room,
   RoomCreate,
@@ -67,3 +68,8 @@ export const completeTask = (taskId: string, payload: TaskCompletion) =>
 // Logs
 export const listDeviceLogs = (deviceId: string) =>
   apiFetch<MaintenanceLog[]>(`/devices/${deviceId}/logs`);
+export const createDeviceLog = (deviceId: string, payload: LogCreate) =>
+  apiFetch<MaintenanceLog>(`/devices/${deviceId}/logs`, {
+    method: 'POST',
+    body: payload,
+  });
