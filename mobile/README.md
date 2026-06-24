@@ -1,6 +1,8 @@
-# Welcome to your Expo app 👋
+# HomeOps Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The HomeOps Expo app — a mobile shell connected to the FastAPI backend. It
+implements the Phase 2 maintenance loop: Dashboard → Rooms → Devices → Tasks →
+Complete → history, all backed by live API data.
 
 ## Get started
 
@@ -10,11 +12,30 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Point the app at your backend
+
+   The app reads its API base URL from `EXPO_PUBLIC_API_URL` (defaults to
+   `http://localhost:8000`). On a physical device, `localhost` resolves to the
+   phone, so use your machine's LAN IP:
+
+   ```bash
+   EXPO_PUBLIC_API_URL=http://192.168.1.20:8000 npx expo start
+   ```
+
+   Make sure the backend is running first (`cd ../api && make migrate && uvicorn app.main:app`).
+
+3. Start the app
 
    ```bash
    npx expo start
    ```
+
+## Structure
+
+- `src/api/` — typed fetch client, endpoint functions, and TanStack Query hooks
+- `src/app/(tabs)/` — Dashboard, Rooms, Tasks, Settings tabs
+- `src/app/{room,device,task}/[id].tsx` — detail screens pushed over the tabs
+- `src/components/ui/` — shared themed UI primitives
 
 In the output, you'll find options to open the app in a
 
