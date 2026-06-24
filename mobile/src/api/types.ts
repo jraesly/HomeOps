@@ -135,6 +135,7 @@ export interface Dashboard {
   overdue: Task[];
   due_soon: Task[];
   upcoming: Task[];
+  needs_attention: Device[];
   recently_completed: MaintenanceLog[];
 }
 

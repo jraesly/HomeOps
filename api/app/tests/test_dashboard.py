@@ -37,6 +37,19 @@ def test_dashboard_buckets_tasks(
     assert body["home_health_score"] == 98
 
 
+def test_dashboard_needs_attention_lists_devices_needing_service(
+    client: TestClient, home_id: str, device_id: str
+) -> None:
+    before = client.get(f"/homes/{home_id}/dashboard").json()
+    assert before["needs_attention"] == []
+
+    client.patch(f"/devices/{device_id}", json={"status": "needs_service"})
+
+    after = client.get(f"/homes/{home_id}/dashboard").json()
+    assert len(after["needs_attention"]) == 1
+    assert after["needs_attention"][0]["id"] == device_id
+
+
 def test_dashboard_updates_after_completion(
     client: TestClient, home_id: str, device_id: str
 ) -> None:

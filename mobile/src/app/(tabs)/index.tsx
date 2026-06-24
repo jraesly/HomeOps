@@ -1,9 +1,12 @@
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useCurrentHome, useDashboard } from '@/api/hooks';
 import type { MaintenanceLog } from '@/api/types';
+import { DeviceCard } from '@/components/device-card';
 import { ThemedText } from '@/components/themed-text';
 import { TaskCard } from '@/components/task-card';
+import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
 import { Screen } from '@/components/ui/screen';
@@ -11,6 +14,7 @@ import { Spacing } from '@/constants/theme';
 import { formatCost, formatDate } from '@/utils/format';
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const homeQuery = useCurrentHome();
   const home = homeQuery.data;
   const dashboardQuery = useDashboard(home?.id);
@@ -46,6 +50,30 @@ export default function DashboardScreen() {
           {data.counts.upcoming} upcoming
         </ThemedText>
       </Card>
+
+      <Card>
+        <ThemedText type="smallBold">Quick Actions</ThemedText>
+        <View style={styles.actions}>
+          <Button
+            label="Rooms & Devices"
+            variant="secondary"
+            onPress={() => router.push('/rooms')}
+          />
+          <Button
+            label="All Tasks"
+            variant="secondary"
+            onPress={() => router.push('/tasks')}
+          />
+        </View>
+      </Card>
+
+      {data.needs_attention.length > 0 ? (
+        <Section title="Needs Attention" emptyMessage="">
+          {data.needs_attention.map((device) => (
+            <DeviceCard key={device.id} device={device} />
+          ))}
+        </Section>
+      ) : null}
 
       <Section title="Overdue" emptyMessage="Nothing overdue. 🎉">
         {data.overdue.map((task) => (
@@ -118,4 +146,5 @@ function CompletedLogRow({ log }: { log: MaintenanceLog }) {
 const styles = StyleSheet.create({
   section: { gap: Spacing.two },
   flexShrink: { flexShrink: 1 },
+  actions: { flexDirection: 'row', gap: Spacing.two, flexWrap: 'wrap' },
 });
