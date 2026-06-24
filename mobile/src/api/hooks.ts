@@ -6,6 +6,7 @@ import {
 
 import {
   completeTask,
+  createArea,
   createDeviceInRoom,
   createHome,
   createRoom,
@@ -14,6 +15,7 @@ import {
   getDevice,
   getRoom,
   getTask,
+  listAreas,
   listDeviceLogs,
   listDeviceTasks,
   listDevices,
@@ -23,6 +25,7 @@ import {
 } from './endpoints';
 import { queryKeys } from './keys';
 import type {
+  AreaCreate,
   DeviceCreate,
   RoomCreate,
   TaskCompletion,
@@ -48,6 +51,14 @@ export function useDashboard(homeId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.dashboard(homeId ?? ''),
     queryFn: () => getDashboard(homeId as string),
+    enabled: !!homeId,
+  });
+}
+
+export function useAreas(homeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.areas(homeId ?? ''),
+    queryFn: () => listAreas(homeId as string),
     enabled: !!homeId,
   });
 }
@@ -111,6 +122,16 @@ export function useTask(taskId: string) {
   });
 }
 
+export function useCreateArea(homeId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AreaCreate) => createArea(homeId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.areas(homeId) });
+    },
+  });
+}
+
 export function useCreateRoom(homeId: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -122,13 +143,28 @@ export function useCreateRoom(homeId: string) {
   });
 }
 
+/**
+ * Create a device in a room, optionally seeding suggested starter tasks
+ * (used by device templates). Tasks are created sequentially after the device.
+ */
 export function useCreateDevice(homeId: string, roomId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload: DeviceCreate) => createDeviceInRoom(roomId, payload),
+    mutationFn: async (vars: {
+      device: DeviceCreate;
+      tasks?: TaskCreate[];
+    }) => {
+      const device = await createDeviceInRoom(roomId, vars.device);
+      for (const task of vars.tasks ?? []) {
+        await createTask(device.id, task);
+      }
+      return device;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.room(roomId) });
+      qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
     },
   });
 }

@@ -48,6 +48,15 @@ export interface Home {
   updated_at: string;
 }
 
+export interface Area {
+  id: string;
+  home_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Room {
   id: string;
   home_id: string;
@@ -138,6 +147,11 @@ export interface HomeCreate {
   name: string;
   address?: string | null;
   timezone?: string;
+}
+
+export interface AreaCreate {
+  name: string;
+  sort_order?: number;
 }
 
 export interface RoomCreate {

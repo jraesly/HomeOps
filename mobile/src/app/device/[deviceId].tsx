@@ -29,8 +29,12 @@ const RECURRENCE_OPTIONS: readonly RecurrenceType[] = [
   'custom_days',
 ];
 
+const SECTIONS = ['Overview', 'Tasks', 'History'] as const;
+type Section = (typeof SECTIONS)[number];
+
 export default function DeviceDetailScreen() {
   const { deviceId } = useLocalSearchParams<{ deviceId: string }>();
+  const [section, setSection] = useState<Section>('Overview');
   const deviceQuery = useDevice(deviceId);
   const tasksQuery = useDeviceTasks(deviceId);
   const logsQuery = useDeviceLogs(deviceId);
@@ -58,63 +62,73 @@ export default function DeviceDetailScreen() {
     <>
       <Stack.Screen options={{ title: device.name }} />
       <Screen title={device.name} subtitle={device.device_type}>
-        <Card>
-          <MetaRow label="Status" value={humanize(device.status)} />
-          {device.manufacturer ? (
-            <MetaRow label="Manufacturer" value={device.manufacturer} />
-          ) : null}
-          {device.model_number ? (
-            <MetaRow label="Model" value={device.model_number} />
-          ) : null}
-          {device.serial_number ? (
-            <MetaRow label="Serial" value={device.serial_number} />
-          ) : null}
-        </Card>
+        <Chips options={SECTIONS} value={section} onChange={setSection} />
 
-        <AddTask homeId={device.home_id} deviceId={device.id} />
+        {section === 'Overview' ? (
+          <Card>
+            <MetaRow label="Status" value={humanize(device.status)} />
+            {device.manufacturer ? (
+              <MetaRow label="Manufacturer" value={device.manufacturer} />
+            ) : null}
+            {device.model_number ? (
+              <MetaRow label="Model" value={device.model_number} />
+            ) : null}
+            {device.serial_number ? (
+              <MetaRow label="Serial" value={device.serial_number} />
+            ) : null}
+            {device.install_date ? (
+              <MetaRow label="Installed" value={formatDate(device.install_date)} />
+            ) : null}
+            {device.warranty_end_date ? (
+              <MetaRow
+                label="Warranty ends"
+                value={formatDate(device.warranty_end_date)}
+              />
+            ) : null}
+          </Card>
+        ) : null}
 
-        <View style={styles.section}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            TASKS
-          </ThemedText>
-          {tasks.length === 0 ? (
-            <EmptyView message="No tasks for this device yet." />
-          ) : (
-            tasks.map((task) => <TaskCard key={task.id} task={task} />)
-          )}
-        </View>
+        {section === 'Tasks' ? (
+          <View style={styles.section}>
+            <AddTask homeId={device.home_id} deviceId={device.id} />
+            {tasks.length === 0 ? (
+              <EmptyView message="No tasks for this device yet." />
+            ) : (
+              tasks.map((task) => <TaskCard key={task.id} task={task} />)
+            )}
+          </View>
+        ) : null}
 
-        <View style={styles.section}>
-          <ThemedText type="smallBold" themeColor="textSecondary">
-            HISTORY
-          </ThemedText>
-          {logs.length === 0 ? (
-            <EmptyView message="No maintenance history yet." />
-          ) : (
-            logs.map((log) => (
-              <Card key={log.id}>
-                <CardRow>
-                  <ThemedText type="smallBold" style={styles.flexShrink}>
-                    {log.title}
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {formatDate(log.completed_at)}
-                  </ThemedText>
-                </CardRow>
-                {log.notes ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {log.notes}
-                  </ThemedText>
-                ) : null}
-                {log.cost_cents != null ? (
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {formatCost(log.cost_cents)}
-                  </ThemedText>
-                ) : null}
-              </Card>
-            ))
-          )}
-        </View>
+        {section === 'History' ? (
+          <View style={styles.section}>
+            {logs.length === 0 ? (
+              <EmptyView message="No maintenance history yet." />
+            ) : (
+              logs.map((log) => (
+                <Card key={log.id}>
+                  <CardRow>
+                    <ThemedText type="smallBold" style={styles.flexShrink}>
+                      {log.title}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {formatDate(log.completed_at)}
+                    </ThemedText>
+                  </CardRow>
+                  {log.notes ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {log.notes}
+                    </ThemedText>
+                  ) : null}
+                  {log.cost_cents != null ? (
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {formatCost(log.cost_cents)}
+                    </ThemedText>
+                  ) : null}
+                </Card>
+              ))
+            )}
+          </View>
+        ) : null}
       </Screen>
     </>
   );

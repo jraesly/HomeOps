@@ -1,30 +1,59 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
 import { Card, CardRow } from '@/components/ui/card';
-import type { Device } from '@/api/types';
-import { humanize } from '@/utils/format';
+import type { Device, Task } from '@/api/types';
+import { describeDue, humanize, isOverdue } from '@/utils/format';
 
-export function DeviceCard({ device }: { device: Device }) {
+type DeviceCardProps = {
+  device: Device;
+  /** Soonest active task, used to surface the next due maintenance. */
+  nextTask?: Task | null;
+  /** Optional room name shown when the card appears outside its room. */
+  roomName?: string;
+};
+
+export function DeviceCard({ device, nextTask, roomName }: DeviceCardProps) {
   const router = useRouter();
+  const overdue = isOverdue(nextTask?.due_date);
+
+  const subtitle = roomName
+    ? `${roomName} · ${device.device_type}`
+    : device.device_type;
+
   return (
     <Card onPress={() => router.push(`/device/${device.id}`)}>
       <CardRow>
         <ThemedText type="smallBold" style={styles.name}>
           {device.name}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {device.device_type}
-        </ThemedText>
+        {overdue ? <Badge label="Overdue" color="#DC2626" /> : null}
       </CardRow>
       <ThemedText type="small" themeColor="textSecondary">
-        {humanize(device.status)}
+        {subtitle}
       </ThemedText>
+      {nextTask ? (
+        <View style={styles.nextRow}>
+          <ThemedText
+            type="small"
+            themeColor={overdue ? undefined : 'textSecondary'}
+            style={overdue ? styles.overdue : undefined}>
+            Next: {nextTask.title} · {describeDue(nextTask.due_date)}
+          </ThemedText>
+        </View>
+      ) : (
+        <ThemedText type="small" themeColor="textSecondary">
+          {humanize(device.status)}
+        </ThemedText>
+      )}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   name: { flexShrink: 1 },
+  nextRow: { flexDirection: 'row' },
+  overdue: { color: '#DC2626' },
 });

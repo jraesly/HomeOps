@@ -1,5 +1,7 @@
 import { apiFetch } from './client';
 import type {
+  Area,
+  AreaCreate,
   Dashboard,
   Device,
   DeviceCreate,
@@ -20,6 +22,12 @@ export const createHome = (payload: HomeCreate) =>
   apiFetch<Home>('/homes', { method: 'POST', body: payload });
 export const getDashboard = (homeId: string) =>
   apiFetch<Dashboard>(`/homes/${homeId}/dashboard`);
+
+// Areas
+export const listAreas = (homeId: string) =>
+  apiFetch<Area[]>(`/homes/${homeId}/areas`);
+export const createArea = (homeId: string, payload: AreaCreate) =>
+  apiFetch<Area>(`/homes/${homeId}/areas`, { method: 'POST', body: payload });
 
 // Rooms
 export const listRooms = (homeId: string) =>

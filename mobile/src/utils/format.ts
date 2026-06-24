@@ -27,6 +27,25 @@ export function describeDue(dueIso: string | null | undefined): string {
   return `Due in ${days} day${days === 1 ? '' : 's'}`;
 }
 
+/** Today's date as an ISO `YYYY-MM-DD` string (local time). */
+export function todayISO(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/** True when an ISO due date is strictly before today. */
+export function isOverdue(dueIso: string | null | undefined): boolean {
+  if (!dueIso) return false;
+  const due = new Date(`${dueIso}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return due < today;
+}
+
 /** Cents → "$18.00" (or "—" when absent). */
 export function formatCost(cents: number | null | undefined): string {
   if (cents == null) return '—';
