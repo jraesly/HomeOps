@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from app.core.config import settings
 from app.routers import (
     areas,
+    consumables,
     dashboard,
     devices,
     homes,
@@ -29,4 +30,5 @@ app.include_router(rooms.router)
 app.include_router(devices.router)
 app.include_router(tasks.router)
 app.include_router(logs.router)
+app.include_router(consumables.router)
 app.include_router(dashboard.router)

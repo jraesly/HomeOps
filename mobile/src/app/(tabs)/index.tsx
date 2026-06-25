@@ -75,6 +75,23 @@ export default function DashboardScreen() {
         </Section>
       ) : null}
 
+      {data.low_stock.length > 0 ? (
+        <Section title="Low Stock" emptyMessage="">
+          {data.low_stock.map((consumable) => (
+            <Card key={consumable.id}>
+              <CardRow>
+                <ThemedText type="smallBold" style={styles.flexShrink}>
+                  {consumable.name}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {consumable.quantity_on_hand} left
+                </ThemedText>
+              </CardRow>
+            </Card>
+          ))}
+        </Section>
+      ) : null}
+
       <Section title="Overdue" emptyMessage="Nothing overdue. 🎉">
         {data.overdue.map((task) => (
           <TaskCard key={task.id} task={task} />

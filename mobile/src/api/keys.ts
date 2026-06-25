@@ -12,4 +12,6 @@ export const queryKeys = {
   deviceTasks: (deviceId: string) => ['deviceTasks', deviceId] as const,
   task: (taskId: string) => ['task', taskId] as const,
   deviceLogs: (deviceId: string) => ['deviceLogs', deviceId] as const,
+  consumables: (homeId: string) => ['consumables', homeId] as const,
+  taskConsumables: (taskId: string) => ['taskConsumables', taskId] as const,
 };

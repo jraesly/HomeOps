@@ -14,6 +14,8 @@ class TaskCompletion(BaseModel):
     cost_cents: int | None = Field(default=None, ge=0)
     performed_by: str | None = None
     title: str | None = None
+    # Deduct linked consumables from inventory on completion.
+    deduct_inventory: bool = True
 
 
 class TaskCompletionResult(BaseModel):

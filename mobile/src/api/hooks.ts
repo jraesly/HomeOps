@@ -7,30 +7,40 @@ import {
 import {
   completeTask,
   createArea,
+  createConsumable,
   createDeviceInRoom,
   createDeviceLog,
   createHome,
   createRoom,
   createTask,
+  deleteConsumable,
   getDashboard,
   getDevice,
   getRoom,
   getTask,
+  linkTaskConsumable,
   listAreas,
+  listConsumables,
   listDeviceLogs,
   listDeviceTasks,
   listDevices,
   listHomeTasks,
   listHomes,
   listRooms,
+  listTaskConsumables,
+  unlinkTaskConsumable,
+  updateConsumable,
 } from './endpoints';
 import { queryKeys } from './keys';
 import type {
   AreaCreate,
+  ConsumableCreate,
+  ConsumableUpdate,
   DeviceCreate,
   LogCreate,
   RoomCreate,
   TaskCompletion,
+  TaskConsumableCreate,
   TaskCreate,
 } from './types';
 
@@ -183,6 +193,78 @@ export function useCreateTask(homeId: string, deviceId: string) {
   });
 }
 
+// ---- Consumables / inventory ----
+
+export function useConsumables(homeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.consumables(homeId ?? ''),
+    queryFn: () => listConsumables(homeId as string),
+    enabled: !!homeId,
+  });
+}
+
+export function useCreateConsumable(homeId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ConsumableCreate) => createConsumable(homeId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useUpdateConsumable(homeId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { consumableId: string; payload: ConsumableUpdate }) =>
+      updateConsumable(vars.consumableId, vars.payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useDeleteConsumable(homeId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (consumableId: string) => deleteConsumable(consumableId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useTaskConsumables(taskId: string) {
+  return useQuery({
+    queryKey: queryKeys.taskConsumables(taskId),
+    queryFn: () => listTaskConsumables(taskId),
+  });
+}
+
+export function useLinkTaskConsumable(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: TaskConsumableCreate) =>
+      linkTaskConsumable(taskId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.taskConsumables(taskId) });
+    },
+  });
+}
+
+export function useUnlinkTaskConsumable(taskId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (linkId: string) => unlinkTaskConsumable(linkId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.taskConsumables(taskId) });
+    },
+  });
+}
+
 /** Add a manual maintenance log to a device (unplanned repair, etc.). */
 export function useCreateLog(homeId: string, deviceId: string) {
   const qc = useQueryClient();
@@ -205,6 +287,7 @@ export function useCompleteTask(homeId: string) {
       qc.invalidateQueries({ queryKey: queryKeys.task(task.id) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
       if (task.device_id) {
         qc.invalidateQueries({
           queryKey: queryKeys.deviceTasks(task.device_id),

@@ -121,6 +121,31 @@ export interface MaintenanceLog {
   updated_at: string;
 }
 
+export interface Consumable {
+  id: string;
+  home_id: string;
+  name: string;
+  category: string | null;
+  sku: string | null;
+  brand: string | null;
+  size: string | null;
+  quantity_on_hand: number;
+  reorder_threshold: number;
+  preferred_vendor: string | null;
+  reorder_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TaskConsumable {
+  id: string;
+  task_id: string;
+  consumable_id: string;
+  quantity_required: number;
+  consumable: Consumable;
+}
+
 export interface DashboardCounts {
   overdue: number;
   due_soon: number;
@@ -136,6 +161,7 @@ export interface Dashboard {
   due_soon: Task[];
   upcoming: Task[];
   needs_attention: Device[];
+  low_stock: Consumable[];
   recently_completed: MaintenanceLog[];
 }
 
@@ -203,4 +229,30 @@ export interface TaskCompletion {
   cost_cents?: number | null;
   performed_by?: string | null;
   title?: string | null;
+  deduct_inventory?: boolean;
+}
+
+export interface ConsumableCreate {
+  name: string;
+  category?: string | null;
+  sku?: string | null;
+  brand?: string | null;
+  size?: string | null;
+  quantity_on_hand?: number;
+  reorder_threshold?: number;
+  preferred_vendor?: string | null;
+  reorder_url?: string | null;
+  notes?: string | null;
+}
+
+export interface ConsumableUpdate {
+  name?: string;
+  category?: string | null;
+  quantity_on_hand?: number;
+  reorder_threshold?: number;
+}
+
+export interface TaskConsumableCreate {
+  consumable_id: string;
+  quantity_required?: number;
 }

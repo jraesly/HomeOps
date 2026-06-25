@@ -2,14 +2,24 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { useCompleteTask, useTask } from '@/api/hooks';
+import {
+  useCompleteTask,
+  useConsumables,
+  useCurrentHome,
+  useLinkTaskConsumable,
+  useTask,
+  useTaskConsumables,
+  useUnlinkTaskConsumable,
+} from '@/api/hooks';
 import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
+import { Chips } from '@/components/ui/chips';
 import { Screen } from '@/components/ui/screen';
-import { ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
+import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
 import {
   describeDue,
@@ -29,6 +39,7 @@ export default function TaskDetailScreen() {
   const [cost, setCost] = useState('');
   const [performedBy, setPerformedBy] = useState('');
   const [completedDate, setCompletedDate] = useState('');
+  const [deductInventory, setDeductInventory] = useState(true);
 
   if (taskQuery.isLoading) {
     return (
@@ -62,6 +73,7 @@ export default function TaskDetailScreen() {
           cost_cents,
           performed_by: performedBy.trim() || null,
           completed_at,
+          deduct_inventory: deductInventory,
         },
       },
       { onSuccess: () => router.back() },
@@ -107,6 +119,8 @@ export default function TaskDetailScreen() {
           </Card>
         ) : null}
 
+        <TaskParts taskId={task.id} homeId={task.home_id} />
+
         {isActive ? (
           <Card>
             <ThemedText type="smallBold">Complete this task</ThemedText>
@@ -134,6 +148,11 @@ export default function TaskDetailScreen() {
               value={completedDate}
               onChangeText={setCompletedDate}
               placeholder="Defaults to today"
+            />
+            <Toggle
+              label="Deduct linked parts from inventory"
+              value={deductInventory}
+              onChange={setDeductInventory}
             />
             <Button
               label="Complete Task"
@@ -164,7 +183,95 @@ function MetaRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function TaskParts({ taskId, homeId }: { taskId: string; homeId: string }) {
+  const linksQuery = useTaskConsumables(taskId);
+  const homeQuery = useCurrentHome();
+  const consumablesQuery = useConsumables(homeQuery.data?.id ?? homeId);
+  const link = useLinkTaskConsumable(taskId);
+  const unlink = useUnlinkTaskConsumable(taskId);
+
+  const [selected, setSelected] = useState<string>('');
+  const [quantity, setQuantity] = useState('1');
+
+  const links = linksQuery.data ?? [];
+  const consumables = consumablesQuery.data ?? [];
+  const linkedIds = new Set(links.map((l) => l.consumable_id));
+  const available = consumables.filter((c) => !linkedIds.has(c.id));
+
+  const onAdd = () => {
+    const consumableId = selected || available[0]?.id;
+    if (!consumableId) return;
+    link.mutate(
+      {
+        consumable_id: consumableId,
+        quantity_required: Math.max(1, parseInt(quantity, 10) || 1),
+      },
+      {
+        onSuccess: () => {
+          setSelected('');
+          setQuantity('1');
+        },
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <ThemedText type="smallBold">Parts</ThemedText>
+      {links.length === 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          No parts linked. Linked parts are deducted from inventory on
+          completion.
+        </ThemedText>
+      ) : (
+        links.map((l) => (
+          <CardRow key={l.id}>
+            <ThemedText type="small" style={styles.flexShrink}>
+              {l.consumable.name} × {l.quantity_required}
+            </ThemedText>
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              onPress={() => unlink.mutate(l.id)}>
+              Remove
+            </ThemedText>
+          </CardRow>
+        ))
+      )}
+
+      {available.length > 0 ? (
+        <View style={styles.addPart}>
+          <Chips
+            options={available.map((c) => c.id)}
+            value={selected || available[0].id}
+            onChange={setSelected}
+            labelFor={(id) =>
+              available.find((c) => c.id === id)?.name ?? id
+            }
+          />
+          <TextField
+            label="Quantity required"
+            value={quantity}
+            onChangeText={setQuantity}
+            keyboardType="numeric"
+          />
+          <Button
+            label="Link Part"
+            variant="secondary"
+            onPress={onAdd}
+            loading={link.isPending}
+          />
+        </View>
+      ) : consumables.length === 0 ? (
+        <EmptyView message="Add consumables in the Inventory tab to link them." />
+      ) : null}
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
   doneRow: { paddingVertical: Spacing.three, alignItems: 'center' },
   flagRow: { flexDirection: 'row', gap: Spacing.two, paddingTop: Spacing.one },
+  flexShrink: { flexShrink: 1 },
+  addPart: { gap: Spacing.two, paddingTop: Spacing.one },
 });

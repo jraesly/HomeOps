@@ -2,8 +2,10 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.consumable import TaskConsumable
 from app.models.enums import RecurrenceType, TaskStatus
 from app.models.maintenance_log import MaintenanceLog
 from app.models.maintenance_task import MaintenanceTask
@@ -54,6 +56,9 @@ def complete_task(
 
     task.last_completed_at = completed_at
 
+    if payload.deduct_inventory:
+        _deduct_consumables(db, task.id)
+
     next_due = calculate_next_due_date(
         completed_at.date(), task.recurrence_type, task.recurrence_interval
     )
@@ -70,3 +75,15 @@ def complete_task(
     db.refresh(task)
     db.refresh(log)
     return task, log
+
+
+def _deduct_consumables(db: Session, task_id: uuid.UUID) -> None:
+    """Decrement on-hand inventory for each consumable linked to the task."""
+    links = db.scalars(
+        select(TaskConsumable).where(TaskConsumable.task_id == task_id)
+    ).all()
+    for link in links:
+        consumable = link.consumable
+        consumable.quantity_on_hand = max(
+            0, consumable.quantity_on_hand - link.quantity_required
+        )

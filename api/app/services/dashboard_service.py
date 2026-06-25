@@ -3,11 +3,13 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.consumable import Consumable
 from app.models.enums import DeviceStatus, Priority, TaskStatus
 from app.models.device import Device
 from app.models.home import Home
 from app.models.maintenance_log import MaintenanceLog
 from app.models.maintenance_task import MaintenanceTask
+from app.schemas.consumable import ConsumableRead
 from app.schemas.dashboard import Dashboard, DashboardCounts
 from app.schemas.device import DeviceRead
 from app.schemas.log import LogRead
@@ -90,6 +92,15 @@ def build_dashboard(db: Session, home: Home, today: date | None = None) -> Dashb
         .order_by(Device.name)
     ).all()
 
+    low_stock = db.scalars(
+        select(Consumable)
+        .where(
+            Consumable.home_id == home.id,
+            Consumable.quantity_on_hand <= Consumable.reorder_threshold,
+        )
+        .order_by(Consumable.name)
+    ).all()
+
     score = _home_health_score(overdue)
 
     return Dashboard(
@@ -105,6 +116,7 @@ def build_dashboard(db: Session, home: Home, today: date | None = None) -> Dashb
         due_soon=[TaskRead.model_validate(t) for t in due_soon],
         upcoming=[TaskRead.model_validate(t) for t in upcoming],
         needs_attention=[DeviceRead.model_validate(d) for d in needs_attention],
+        low_stock=[ConsumableRead.model_validate(c) for c in low_stock],
         recently_completed=[LogRead.model_validate(log) for log in recent_logs],
     )
 

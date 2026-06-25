@@ -2,6 +2,9 @@ import { apiFetch } from './client';
 import type {
   Area,
   AreaCreate,
+  Consumable,
+  ConsumableCreate,
+  ConsumableUpdate,
   Dashboard,
   Device,
   DeviceCreate,
@@ -14,6 +17,8 @@ import type {
   Task,
   TaskCompletion,
   TaskCompletionResult,
+  TaskConsumable,
+  TaskConsumableCreate,
   TaskCreate,
 } from './types';
 
@@ -64,6 +69,38 @@ export const completeTask = (taskId: string, payload: TaskCompletion) =>
     method: 'POST',
     body: payload,
   });
+
+// Consumables
+export const listConsumables = (homeId: string) =>
+  apiFetch<Consumable[]>(`/homes/${homeId}/consumables`);
+export const createConsumable = (homeId: string, payload: ConsumableCreate) =>
+  apiFetch<Consumable>(`/homes/${homeId}/consumables`, {
+    method: 'POST',
+    body: payload,
+  });
+export const updateConsumable = (
+  consumableId: string,
+  payload: ConsumableUpdate,
+) =>
+  apiFetch<Consumable>(`/consumables/${consumableId}`, {
+    method: 'PATCH',
+    body: payload,
+  });
+export const deleteConsumable = (consumableId: string) =>
+  apiFetch<void>(`/consumables/${consumableId}`, { method: 'DELETE' });
+
+export const listTaskConsumables = (taskId: string) =>
+  apiFetch<TaskConsumable[]>(`/tasks/${taskId}/consumables`);
+export const linkTaskConsumable = (
+  taskId: string,
+  payload: TaskConsumableCreate,
+) =>
+  apiFetch<TaskConsumable>(`/tasks/${taskId}/consumables`, {
+    method: 'POST',
+    body: payload,
+  });
+export const unlinkTaskConsumable = (linkId: string) =>
+  apiFetch<void>(`/task-consumables/${linkId}`, { method: 'DELETE' });
 
 // Logs
 export const listDeviceLogs = (deviceId: string) =>
