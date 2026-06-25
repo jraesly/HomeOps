@@ -1,4 +1,8 @@
-# Render blueprint: deploy the HomeOps API + managed Postgres.
+# Render blueprint: deploy the HomeOps API container.
+# The database is external (e.g. a free Neon Postgres) — paste its connection
+# string into the DATABASE_URL env var when Render prompts you (it is marked
+# sync:false, so it is set in the dashboard, not stored in the repo).
+#
 # Push to GitHub, then in Render: New > Blueprint, point it at this repo.
 services:
   - type: web
@@ -10,12 +14,6 @@ services:
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: homeops-db
-          property: connectionString
+        sync: false
       - key: ENVIRONMENT
         value: production
-
-databases:
-  - name: homeops-db
-    plan: free

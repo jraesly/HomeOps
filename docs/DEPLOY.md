@@ -10,23 +10,39 @@ build on the phone.
 
 ## 1. Host the backend
 
-The repo includes `api/Dockerfile` and a `render.yaml` blueprint.
+The repo includes `api/Dockerfile` and a `render.yaml` blueprint. On boot the
+container runs `alembic upgrade head`, then serves on `$PORT`. `DATABASE_URL`
+is normalized to the psycopg3 driver automatically, so any plain
+`postgresql://` connection string works as-is.
 
-**Render (easiest):**
-1. Push this repo to GitHub.
-2. In Render: **New → Blueprint**, select the repo. It creates a Dockerized
-   web service (`homeops-api`) + a managed Postgres database and wires
-   `DATABASE_URL` automatically.
-3. On boot the container runs `alembic upgrade head`, then serves on `$PORT`.
-4. (Optional) Seed demo data once: open the service **Shell** in Render and run
+### Free path — Render (API) + Neon (Postgres), ~$0
+
+Render's free web service is enough to run the API; use a free **Neon**
+database (it doesn't expire the way Render's free Postgres does).
+
+1. **Create the database.** Sign up at [neon.tech](https://neon.tech), create a
+   project, and copy its Postgres connection string (looks like
+   `postgresql://user:pass@ep-xxx.neon.tech/neondb?sslmode=require`).
+   If migrations ever hang, use Neon's **direct** connection string (the host
+   without `-pooler`) rather than the pooled one.
+2. **Deploy the API.** Push this repo to GitHub, then in Render:
+   **New → Blueprint**, select the repo. When prompted, paste the Neon string
+   into the `DATABASE_URL` env var (it is `sync:false`, so it is set in the
+   dashboard, not committed).
+3. **Seed demo data** (optional): open the service **Shell** in Render and run
    `python -m app.seed`.
-5. Note the public URL, e.g. `https://homeops-api.onrender.com`. Verify
+4. Note the public URL, e.g. `https://homeops-api.onrender.com`, and verify
    `GET /health` returns `{"status":"ok",...}`.
 
-`DATABASE_URL` is normalized to the psycopg3 driver automatically, so the
-plain `postgresql://` URL Render provides works as-is.
+> Caveat: the free Render service **sleeps after ~15 min idle**, so the first
+> request after a nap takes ~50s to wake, then it's fast.
 
-Any Docker host works the same way (Fly.io, Railway, Azure Container Apps).
+### Always-warm path — Railway, ~$5/mo
+
+If the cold start bugs you, Railway runs the same Dockerfile with no idle
+spindown: create a project from the repo, add a Postgres plugin (it sets
+`DATABASE_URL` for you), and deploy. Fly.io and Azure Container Apps work the
+same way with this Dockerfile.
 
 ## 2. Build the app and install it on the iPhone
 
