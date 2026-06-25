@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 
 import { queryClient } from '@/api/query-client';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { ReminderSync } from '@/components/reminder-sync';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -11,6 +12,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <AnimatedSplashOverlay />
+        <ReminderSync />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="room/[roomId]" options={{ title: 'Room' }} />
