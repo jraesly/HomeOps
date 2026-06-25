@@ -43,11 +43,16 @@ export async function requestReminderPermission(): Promise<boolean> {
 }
 
 /** Build the local trigger date for a task at a given lead time. */
-function triggerDateFor(dueIso: string, leadDays: number, hour: number): Date | null {
+function triggerDateFor(
+  dueIso: string,
+  leadDays: number,
+  hour: number,
+  minute: number,
+): Date | null {
   const due = new Date(`${dueIso}T00:00:00`);
   if (Number.isNaN(due.getTime())) return null;
   due.setDate(due.getDate() - leadDays);
-  due.setHours(hour, 0, 0, 0);
+  due.setHours(hour, minute, 0, 0);
   return due;
 }
 
@@ -72,7 +77,12 @@ export async function syncReminders(
   for (const task of tasks) {
     if (task.status !== 'active' || !task.due_date) continue;
     for (const leadDays of settings.leadDays) {
-      const date = triggerDateFor(task.due_date, leadDays, settings.hour);
+      const date = triggerDateFor(
+        task.due_date,
+        leadDays,
+        settings.hour,
+        settings.minute,
+      );
       if (date && date.getTime() > now) {
         pending.push({ date, task });
       }

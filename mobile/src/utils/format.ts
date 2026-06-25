@@ -46,6 +46,16 @@ export function isOverdue(dueIso: string | null | undefined): boolean {
   return due < today;
 }
 
+/** Format an hour/minute as a localized time, e.g. "9:00 AM". */
+export function formatTimeOfDay(hour: number, minute: number): string {
+  const date = new Date();
+  date.setHours(hour, minute, 0, 0);
+  return date.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 /** Cents → "$18.00" (or "—" when absent). */
 export function formatCost(cents: number | null | undefined): string {
   if (cents == null) return '—';

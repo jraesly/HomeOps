@@ -6,6 +6,7 @@ import { useCurrentHome } from '@/api/hooks';
 import { ThemedText } from '@/components/themed-text';
 import { Card, CardRow } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
+import { TimeOfDayPicker } from '@/components/ui/time-picker';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
 import { requestReminderPermission } from '@/reminders/scheduler';
@@ -82,7 +83,7 @@ function Reminders() {
     <Card>
       <ThemedText type="smallBold">Reminders</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Get a local notification at 9:00 AM when tasks are due.
+        Get a local notification when tasks are due.
       </ThemedText>
 
       <Toggle
@@ -100,6 +101,12 @@ function Reminders() {
 
       {settings.enabled ? (
         <View style={styles.leadTimes}>
+          <TimeOfDayPicker
+            label="Time"
+            hour={settings.hour}
+            minute={settings.minute}
+            onChange={(hour, minute) => updateSettings({ hour, minute })}
+          />
           <ThemedText type="smallBold" themeColor="textSecondary">
             Remind me
           </ThemedText>

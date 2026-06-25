@@ -15,12 +15,15 @@ export interface ReminderSettings {
   leadDays: number[];
   /** Hour of day (local, 0-23) reminders fire at. */
   hour: number;
+  /** Minute of the hour (local, 0-59) reminders fire at. */
+  minute: number;
 }
 
 const DEFAULT_SETTINGS: ReminderSettings = {
   enabled: false,
   leadDays: [0],
   hour: 9,
+  minute: 0,
 };
 
 const STORAGE_KEY = 'homeops.reminderSettings.v1';
