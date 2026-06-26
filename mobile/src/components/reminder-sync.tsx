@@ -15,6 +15,10 @@ import {
   syncReminders,
 } from '@/reminders/scheduler';
 import { hydrateSettings, useReminderSettings } from '@/reminders/settings';
+import {
+  hydrateTaskOverrides,
+  useTaskOverrides,
+} from '@/reminders/task-overrides';
 
 /**
  * Headless app-level component (mounted in the root layout) that:
@@ -26,6 +30,7 @@ import { hydrateSettings, useReminderSettings } from '@/reminders/settings';
 export function ReminderSync() {
   const router = useRouter();
   const settings = useReminderSettings();
+  const overrides = useTaskOverrides();
   const homesQuery = useHomes();
   const createHome = useCreateHome();
   const homeQuery = useCurrentHome();
@@ -38,6 +43,7 @@ export function ReminderSync() {
     configureNotificationHandler();
     void hydrateSettings();
     void hydrateSelectedHome();
+    void hydrateTaskOverrides();
   }, []);
 
   // Bootstrap a default home exactly once when none exist.
@@ -68,8 +74,8 @@ export function ReminderSync() {
 
   useEffect(() => {
     if (!tasks) return;
-    void syncReminders(tasks, settings);
-  }, [tasks, settings]);
+    void syncReminders(tasks, settings, overrides);
+  }, [tasks, settings, overrides]);
 
   return null;
 }
