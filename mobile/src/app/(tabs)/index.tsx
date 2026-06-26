@@ -56,6 +56,11 @@ function DashboardContent({ data }: { data: Dashboard }) {
             variant="secondary"
             onPress={() => router.push('/tasks')}
           />
+          <Button
+            label="Scan QR"
+            variant="secondary"
+            onPress={() => router.push('/scan')}
+          />
         </View>
       </Card>
 

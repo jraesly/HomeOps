@@ -12,6 +12,7 @@ import {
 import { PRIORITIES, RECURRENCE_OPTIONS, TASK_TYPES } from '@/api/enums';
 import type { Device, Priority, RecurrenceType, TaskType } from '@/api/types';
 import { ThemedText } from '@/components/themed-text';
+import { QrLabel } from '@/components/qr-label';
 import { TaskCard } from '@/components/task-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
@@ -77,6 +78,13 @@ function DeviceDetailContent({ device }: { device: Device }) {
                 value={formatDate(device.warranty_end_date)}
               />
             ) : null}
+          </Card>
+        ) : null}
+
+        {section === 'Overview' ? (
+          <Card>
+            <ThemedText type="smallBold">QR code</ThemedText>
+            <QrLabel deviceId={device.id} deviceName={device.name} />
           </Card>
         ) : null}
 
