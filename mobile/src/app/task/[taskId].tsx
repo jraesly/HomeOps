@@ -11,12 +11,15 @@ import {
   useTask,
   useTaskConsumables,
   useUnlinkTaskConsumable,
+  useUpdateTask,
 } from '@/api/hooks';
+import type { Priority, RecurrenceType, Task } from '@/api/types';
 import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
+import { Collapsible } from '@/components/ui/collapsible';
 import { Screen } from '@/components/ui/screen';
 import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
@@ -28,6 +31,16 @@ import {
   humanize,
   priorityColor,
 } from '@/utils/format';
+
+const PRIORITIES: readonly Priority[] = ['low', 'medium', 'high', 'critical'];
+const RECURRENCE_OPTIONS: readonly RecurrenceType[] = [
+  'none',
+  'weekly',
+  'monthly',
+  'quarterly',
+  'yearly',
+  'custom_days',
+];
 
 export default function TaskDetailScreen() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
@@ -140,6 +153,10 @@ export default function TaskDetailScreen() {
           </Card>
         ) : null}
 
+        <Card>
+          <TaskEdit task={task} />
+        </Card>
+
         <TaskParts taskId={task.id} homeId={task.home_id} />
 
         {isActive ? (
@@ -197,6 +214,75 @@ export default function TaskDetailScreen() {
         />
       </Screen>
     </>
+  );
+}
+
+function TaskEdit({ task }: { task: Task }) {
+  const update = useUpdateTask(task.home_id, task.device_id);
+  const [title, setTitle] = useState(task.title);
+  const [priority, setPriority] = useState<Priority>(task.priority);
+  const [recurrence, setRecurrence] = useState<RecurrenceType>(
+    task.recurrence_type,
+  );
+  const [interval, setInterval] = useState(String(task.recurrence_interval));
+  const [dueDate, setDueDate] = useState(task.due_date ?? '');
+
+  const onSave = () => {
+    update.mutate({
+      taskId: task.id,
+      payload: {
+        title: title.trim() || task.title,
+        priority,
+        recurrence_type: recurrence,
+        recurrence_interval: Math.max(1, parseInt(interval, 10) || 1),
+        due_date: dueDate.trim() ? dueDate.trim() : null,
+      },
+    });
+  };
+
+  return (
+    <Collapsible title="Edit task">
+      <View style={styles.editForm}>
+        <TextField label="Title" value={title} onChangeText={setTitle} />
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          Priority
+        </ThemedText>
+        <Chips
+          options={PRIORITIES}
+          value={priority}
+          onChange={setPriority}
+          labelFor={humanize}
+        />
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          Recurrence
+        </ThemedText>
+        <Chips
+          options={RECURRENCE_OPTIONS}
+          value={recurrence}
+          onChange={setRecurrence}
+          labelFor={(value) => describeRecurrence(value, 1)}
+        />
+        {recurrence !== 'none' ? (
+          <TextField
+            label="Interval"
+            value={interval}
+            onChangeText={setInterval}
+            keyboardType="numeric"
+          />
+        ) : null}
+        <TextField
+          label="Due date (YYYY-MM-DD, optional)"
+          value={dueDate}
+          onChangeText={setDueDate}
+          placeholder="2026-07-01"
+        />
+        <Button
+          label="Save Changes"
+          onPress={onSave}
+          loading={update.isPending}
+        />
+      </View>
+    </Collapsible>
   );
 }
 
@@ -302,4 +388,5 @@ const styles = StyleSheet.create({
   flagRow: { flexDirection: 'row', gap: Spacing.two, paddingTop: Spacing.one },
   flexShrink: { flexShrink: 1 },
   addPart: { gap: Spacing.two, paddingTop: Spacing.one },
+  editForm: { gap: Spacing.two },
 });

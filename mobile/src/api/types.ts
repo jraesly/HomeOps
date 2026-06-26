@@ -221,6 +221,19 @@ export interface TaskCreate {
   contractor_required?: boolean;
 }
 
+export interface TaskUpdate {
+  title?: string;
+  task_type?: TaskType;
+  priority?: Priority;
+  recurrence_type?: RecurrenceType;
+  recurrence_interval?: number;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
+  instructions?: string | null;
+  requires_parts?: boolean;
+  contractor_required?: boolean;
+}
+
 export interface LogCreate {
   title: string;
   completed_at?: string | null;

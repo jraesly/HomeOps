@@ -32,6 +32,7 @@ import {
   unlinkTaskConsumable,
   updateConsumable,
   updateRoom,
+  updateTask,
 } from './endpoints';
 import { queryKeys } from './keys';
 import type {
@@ -46,6 +47,7 @@ import type {
   TaskCompletion,
   TaskConsumableCreate,
   TaskCreate,
+  TaskUpdate,
 } from './types';
 import { useSelectedHomeId } from '@/homes/selected-home';
 
@@ -312,6 +314,22 @@ export function useCreateLog(homeId: string, deviceId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.deviceLogs(deviceId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useUpdateTask(homeId: string, deviceId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { taskId: string; payload: TaskUpdate }) =>
+      updateTask(vars.taskId, vars.payload),
+    onSuccess: (task) => {
+      qc.invalidateQueries({ queryKey: queryKeys.task(task.id) });
+      qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      if (deviceId) {
+        qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
+      }
     },
   });
 }

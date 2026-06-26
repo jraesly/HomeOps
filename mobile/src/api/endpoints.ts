@@ -21,6 +21,7 @@ import type {
   TaskConsumable,
   TaskConsumableCreate,
   TaskCreate,
+  TaskUpdate,
 } from './types';
 
 // Homes
@@ -67,6 +68,8 @@ export const createTask = (deviceId: string, payload: TaskCreate) =>
     method: 'POST',
     body: payload,
   });
+export const updateTask = (taskId: string, payload: TaskUpdate) =>
+  apiFetch<Task>(`/tasks/${taskId}`, { method: 'PATCH', body: payload });
 export const deleteTask = (taskId: string) =>
   apiFetch<void>(`/tasks/${taskId}`, { method: 'DELETE' });
 export const completeTask = (taskId: string, payload: TaskCompletion) =>
