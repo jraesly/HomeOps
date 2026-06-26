@@ -190,6 +190,13 @@ export interface RoomCreate {
   notes?: string | null;
 }
 
+export interface RoomUpdate {
+  name?: string;
+  area_id?: string | null;
+  room_type?: string | null;
+  notes?: string | null;
+}
+
 export interface DeviceCreate {
   name: string;
   device_type?: DeviceType;
@@ -203,6 +210,19 @@ export interface DeviceCreate {
 export interface TaskCreate {
   title: string;
   description?: string | null;
+  task_type?: TaskType;
+  priority?: Priority;
+  recurrence_type?: RecurrenceType;
+  recurrence_interval?: number;
+  due_date?: string | null;
+  estimated_minutes?: number | null;
+  instructions?: string | null;
+  requires_parts?: boolean;
+  contractor_required?: boolean;
+}
+
+export interface TaskUpdate {
+  title?: string;
   task_type?: TaskType;
   priority?: Priority;
   recurrence_type?: RecurrenceType;

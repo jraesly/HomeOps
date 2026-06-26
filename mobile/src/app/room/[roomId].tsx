@@ -3,12 +3,14 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import {
+  useAreas,
   useCreateDevice,
   useDevices,
   useHomeTasks,
   useRoom,
+  useUpdateRoom,
 } from '@/api/hooks';
-import type { DeviceType, TaskCreate } from '@/api/types';
+import type { DeviceType, Room, TaskCreate } from '@/api/types';
 import { DeviceCard } from '@/components/device-card';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,8 @@ import { Spacing } from '@/constants/theme';
 import { DEVICE_TEMPLATES, type DeviceTemplate } from '@/data/device-templates';
 import { describeRecurrence, todayISO } from '@/utils/format';
 import { nextDueTask } from '@/utils/tasks';
+
+const NO_AREA = '';
 
 const DEVICE_TYPES: readonly DeviceType[] = [
   'HVAC',
@@ -66,6 +70,7 @@ export default function RoomDetailScreen() {
     <>
       <Stack.Screen options={{ title: room.name }} />
       <Screen title={room.name} subtitle={room.room_type ?? undefined}>
+        <RoomAreaEditor homeId={room.home_id} room={room} />
         <AddDevice homeId={room.home_id} roomId={room.id} />
         <View style={styles.list}>
           <ThemedText type="smallBold" themeColor="textSecondary">
@@ -85,6 +90,34 @@ export default function RoomDetailScreen() {
         </View>
       </Screen>
     </>
+  );
+}
+
+function RoomAreaEditor({ homeId, room }: { homeId: string; room: Room }) {
+  const areasQuery = useAreas(homeId);
+  const updateRoom = useUpdateRoom(homeId, room.id);
+
+  const areas = [...(areasQuery.data ?? [])].sort(
+    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name),
+  );
+  if (areas.length === 0) return null;
+
+  const options = [NO_AREA, ...areas.map((a) => a.id)];
+  const labelFor = (id: string) =>
+    id === NO_AREA ? 'No area' : (areas.find((a) => a.id === id)?.name ?? id);
+
+  return (
+    <Card>
+      <ThemedText type="smallBold">Area / floor</ThemedText>
+      <Chips
+        options={options}
+        value={room.area_id ?? NO_AREA}
+        onChange={(id) =>
+          updateRoom.mutate({ area_id: id === NO_AREA ? null : id })
+        }
+        labelFor={labelFor}
+      />
+    </Card>
   );
 }
 

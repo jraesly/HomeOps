@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { API_BASE_URL } from '@/api/config';
-import { useCurrentHome } from '@/api/hooks';
+import { useCreateHome, useCurrentHome, useHomes } from '@/api/hooks';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Screen } from '@/components/ui/screen';
+import { TextField } from '@/components/ui/text-field';
 import { TimeOfDayPicker } from '@/components/ui/time-picker';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
+import { setSelectedHomeId } from '@/homes/selected-home';
 import { requestReminderPermission } from '@/reminders/scheduler';
 import {
   LEAD_TIME_OPTIONS,
@@ -18,26 +22,10 @@ import {
 } from '@/reminders/settings';
 
 export default function SettingsScreen() {
-  const homeQuery = useCurrentHome();
-
   return (
     <Screen title="Settings">
+      <Homes />
       <Reminders />
-
-      <Card>
-        <CardRow>
-          <ThemedText type="smallBold">Home</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {homeQuery.data?.name ?? '—'}
-          </ThemedText>
-        </CardRow>
-        <CardRow>
-          <ThemedText type="smallBold">Timezone</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {homeQuery.data?.timezone ?? '—'}
-          </ThemedText>
-        </CardRow>
-      </Card>
 
       <Card>
         <CardRow>
@@ -51,6 +39,69 @@ export default function SettingsScreen() {
         </ThemedText>
       </Card>
     </Screen>
+  );
+}
+
+function Homes() {
+  const homesQuery = useHomes();
+  const currentQuery = useCurrentHome();
+  const createHome = useCreateHome();
+  const [name, setName] = useState('');
+
+  const homes = homesQuery.data ?? [];
+  const currentId = currentQuery.data?.id;
+
+  const onAdd = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    createHome.mutate(
+      { name: trimmed },
+      {
+        onSuccess: (home) => {
+          setName('');
+          void setSelectedHomeId(home.id);
+        },
+      },
+    );
+  };
+
+  return (
+    <Card>
+      <ThemedText type="smallBold">Homes</ThemedText>
+      {homes.map((home) => {
+        const selected = home.id === currentId;
+        return (
+          <Pressable
+            key={home.id}
+            onPress={() => setSelectedHomeId(home.id)}
+            style={({ pressed }) => pressed && styles.pressed}>
+            <ThemedView
+              type={selected ? 'backgroundSelected' : 'backgroundElement'}
+              style={styles.homeRow}>
+              <ThemedText type="small">{home.name}</ThemedText>
+              {selected ? (
+                <ThemedText type="smallBold" themeColor="textSecondary">
+                  ✓ Current
+                </ThemedText>
+              ) : null}
+            </ThemedView>
+          </Pressable>
+        );
+      })}
+      <TextField
+        label="Add a home"
+        value={name}
+        onChangeText={setName}
+        placeholder="e.g. Lake Cabin"
+      />
+      <Button
+        label="Add Home"
+        variant="secondary"
+        onPress={onAdd}
+        loading={createHome.isPending}
+        disabled={!name.trim()}
+      />
+    </Card>
   );
 }
 
@@ -126,4 +177,13 @@ function Reminders() {
 
 const styles = StyleSheet.create({
   leadTimes: { gap: Spacing.two, paddingTop: Spacing.one },
+  homeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+    borderRadius: Spacing.two,
+  },
+  pressed: { opacity: 0.7 },
 });
