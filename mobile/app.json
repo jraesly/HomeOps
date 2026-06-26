@@ -9,11 +9,11 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.homeops.app",
+      "bundleIdentifier": "com.jraesly.homeops",
       "supportsTablet": true
     },
     "android": {
-      "package": "com.homeops.app",
+      "package": "com.jraesly.homeops",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
