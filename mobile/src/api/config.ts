@@ -7,3 +7,9 @@
  */
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+/**
+ * Optional shared API key sent as the X-API-Key header. Set EXPO_PUBLIC_API_KEY
+ * at build time to match the backend's API_KEY. Empty = no header (open API).
+ */
+export const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';

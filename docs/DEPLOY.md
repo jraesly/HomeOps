@@ -44,6 +44,26 @@ spindown: create a project from the repo, add a Postgres plugin (it sets
 `DATABASE_URL` for you), and deploy. Fly.io and Azure Container Apps work the
 same way with this Dockerfile.
 
+### Locking down the API (recommended)
+
+The API ships open by default. To require a shared key:
+
+1. Pick a random string and set `API_KEY` on the Render service (env var).
+   The API now rejects any request without a matching `X-API-Key` header
+   (except `/health`).
+2. Give the app the same value as `EXPO_PUBLIC_API_KEY` at build time — set it
+   as an EAS env var (so it isn't committed), then rebuild:
+   ```bash
+   eas env:create --name EXPO_PUBLIC_API_KEY --value "your-key" --environment preview --visibility sensitive
+   eas build --profile preview --platform ios
+   ```
+
+Note: an `EXPO_PUBLIC_*` value is embedded in the app bundle, so this is a
+gate against random internet traffic, not a defense against someone who
+extracts the binary. It's the right "engineered enough" step until real
+per-user auth exists. Set `API_KEY` **after** shipping a build that carries the
+key, or set both together — otherwise the running app gets 401s.
+
 ## 2. Build the app and install it on the iPhone
 
 The hosted API URL is baked into the build via `EXPO_PUBLIC_API_URL` in
