@@ -12,6 +12,7 @@ import { QueryBoundary } from '@/components/ui/query-boundary';
 import { EmptyView } from '@/components/ui/state-views';
 import { Screen } from '@/components/ui/screen';
 import { Spacing } from '@/constants/theme';
+import { currentSeasonSuggestions } from '@/data/seasonal';
 import { formatCost, formatDate } from '@/utils/format';
 
 export default function DashboardScreen() {
@@ -64,6 +65,8 @@ function DashboardContent({ data }: { data: Dashboard }) {
         </View>
       </Card>
 
+      <SeasonalCard />
+
       {data.needs_attention.length > 0 ? (
         <Section title="Needs Attention" emptyMessage="">
           {data.needs_attention.map((device) => (
@@ -115,6 +118,23 @@ function DashboardContent({ data }: { data: Dashboard }) {
         ))}
       </Section>
     </Screen>
+  );
+}
+
+function SeasonalCard() {
+  const { season, suggestions } = currentSeasonSuggestions(new Date());
+  return (
+    <Card>
+      <ThemedText type="smallBold">{season} suggestions</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Seasonal maintenance worth considering:
+      </ThemedText>
+      {suggestions.map((s) => (
+        <ThemedText key={s} type="small" themeColor="textSecondary">
+          • {s}
+        </ThemedText>
+      ))}
+    </Card>
   );
 }
 
