@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-API.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://homeops-api-40yb.onrender.com"
       }
     },
     "preview": {
@@ -17,13 +17,13 @@
         "simulator": false
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-API.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://homeops-api-40yb.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-API.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://homeops-api-40yb.onrender.com"
       }
     }
   },
