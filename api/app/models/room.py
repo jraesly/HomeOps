@@ -10,7 +10,7 @@ class Room(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "rooms"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     area_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("areas.id", ondelete="SET NULL"), nullable=True

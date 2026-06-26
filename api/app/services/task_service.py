@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models.consumable import TaskConsumable
 from app.models.enums import RecurrenceType, TaskStatus
@@ -80,7 +80,9 @@ def complete_task(
 def _deduct_consumables(db: Session, task_id: uuid.UUID) -> None:
     """Decrement on-hand inventory for each consumable linked to the task."""
     links = db.scalars(
-        select(TaskConsumable).where(TaskConsumable.task_id == task_id)
+        select(TaskConsumable)
+        .where(TaskConsumable.task_id == task_id)
+        .options(selectinload(TaskConsumable.consumable))
     ).all()
     for link in links:
         consumable = link.consumable

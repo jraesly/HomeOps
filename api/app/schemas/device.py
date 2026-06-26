@@ -51,3 +51,5 @@ class DeviceRead(ORMModel):
     notes: str | None
     created_at: datetime
     updated_at: datetime
+    # Soonest active, dated task for this device (computed; not a column).
+    next_due: date | None = None

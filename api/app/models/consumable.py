@@ -10,7 +10,7 @@ class Consumable(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "consumables"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     name: Mapped[str] = mapped_column(String(255))
     category: Mapped[str | None] = mapped_column(String(64), nullable=True)
@@ -30,10 +30,10 @@ class TaskConsumable(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "task_consumables"
 
     task_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("maintenance_tasks.id", ondelete="CASCADE")
+        ForeignKey("maintenance_tasks.id", ondelete="CASCADE"), index=True
     )
     consumable_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("consumables.id", ondelete="CASCADE")
+        ForeignKey("consumables.id", ondelete="CASCADE"), index=True
     )
     quantity_required: Mapped[int] = mapped_column(Integer, default=1)
 

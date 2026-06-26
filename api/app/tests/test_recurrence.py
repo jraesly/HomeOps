@@ -48,3 +48,33 @@ def test_month_end_clamps() -> None:
     assert calculate_next_due_date(date(2026, 1, 31), "monthly", 1) == date(
         2026, 2, 28
     )
+
+
+def test_daily() -> None:
+    assert calculate_next_due_date(date(2026, 1, 1), "daily", 3) == date(
+        2026, 1, 4
+    )
+
+
+def test_seasonal_is_three_months() -> None:
+    assert calculate_next_due_date(date(2026, 1, 15), "seasonal", 1) == date(
+        2026, 4, 15
+    )
+
+
+def test_invalid_recurrence_type_returns_none() -> None:
+    assert calculate_next_due_date(date(2026, 1, 1), "bogus", 1) is None
+
+
+def test_interval_below_one_is_clamped() -> None:
+    # interval 0 is treated as 1, not "same day".
+    assert calculate_next_due_date(date(2026, 1, 1), "monthly", 0) == date(
+        2026, 2, 1
+    )
+
+
+def test_leap_day_into_non_leap_year_clamps() -> None:
+    # Feb 29, 2024 + 1 year clamps to Feb 28, 2025.
+    assert calculate_next_due_date(date(2024, 2, 29), "yearly", 1) == date(
+        2025, 2, 28
+    )
