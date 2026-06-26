@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   useConsumables,
@@ -93,6 +93,13 @@ function ConsumableRow({
           <Stepper label="+" onPress={() => adjust(1)} />
         </View>
       </CardRow>
+      {consumable.reorder_url ? (
+        <Button
+          label={lowStock ? 'Reorder now' : 'Reorder'}
+          variant="secondary"
+          onPress={() => Linking.openURL(consumable.reorder_url as string)}
+        />
+      ) : null}
     </Card>
   );
 }
@@ -112,6 +119,7 @@ function AddConsumable({ homeId }: { homeId: string }) {
   const [category, setCategory] = useState('');
   const [quantity, setQuantity] = useState('0');
   const [threshold, setThreshold] = useState('1');
+  const [reorderUrl, setReorderUrl] = useState('');
   const create = useCreateConsumable(homeId);
 
   const onSubmit = () => {
@@ -123,6 +131,7 @@ function AddConsumable({ homeId }: { homeId: string }) {
         category: category.trim() ? category.trim() : null,
         quantity_on_hand: Math.max(0, parseInt(quantity, 10) || 0),
         reorder_threshold: Math.max(0, parseInt(threshold, 10) || 0),
+        reorder_url: reorderUrl.trim() ? reorderUrl.trim() : null,
       },
       {
         onSuccess: () => {
@@ -130,6 +139,7 @@ function AddConsumable({ homeId }: { homeId: string }) {
           setCategory('');
           setQuantity('0');
           setThreshold('1');
+          setReorderUrl('');
         },
       },
     );
@@ -168,6 +178,12 @@ function AddConsumable({ homeId }: { homeId: string }) {
           />
         </View>
       </View>
+      <TextField
+        label="Reorder URL (optional)"
+        value={reorderUrl}
+        onChangeText={setReorderUrl}
+        placeholder="https://… (one-tap reorder)"
+      />
       <Button
         label="Add Consumable"
         onPress={onSubmit}
