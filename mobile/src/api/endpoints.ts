@@ -14,6 +14,7 @@ import type {
   MaintenanceLog,
   Room,
   RoomCreate,
+  RoomUpdate,
   Task,
   TaskCompletion,
   TaskCompletionResult,
@@ -41,6 +42,8 @@ export const listRooms = (homeId: string) =>
 export const getRoom = (roomId: string) => apiFetch<Room>(`/rooms/${roomId}`);
 export const createRoom = (homeId: string, payload: RoomCreate) =>
   apiFetch<Room>(`/homes/${homeId}/rooms`, { method: 'POST', body: payload });
+export const updateRoom = (roomId: string, payload: RoomUpdate) =>
+  apiFetch<Room>(`/rooms/${roomId}`, { method: 'PATCH', body: payload });
 
 // Devices
 export const listDevices = (homeId: string) =>
@@ -64,6 +67,8 @@ export const createTask = (deviceId: string, payload: TaskCreate) =>
     method: 'POST',
     body: payload,
   });
+export const deleteTask = (taskId: string) =>
+  apiFetch<void>(`/tasks/${taskId}`, { method: 'DELETE' });
 export const completeTask = (taskId: string, payload: TaskCompletion) =>
   apiFetch<TaskCompletionResult>(`/tasks/${taskId}/complete`, {
     method: 'POST',

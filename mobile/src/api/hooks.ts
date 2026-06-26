@@ -14,6 +14,7 @@ import {
   createRoom,
   createTask,
   deleteConsumable,
+  deleteTask,
   getDashboard,
   getDevice,
   getRoom,
@@ -30,6 +31,7 @@ import {
   listTaskConsumables,
   unlinkTaskConsumable,
   updateConsumable,
+  updateRoom,
 } from './endpoints';
 import { queryKeys } from './keys';
 import type {
@@ -37,24 +39,50 @@ import type {
   ConsumableCreate,
   ConsumableUpdate,
   DeviceCreate,
+  HomeCreate,
   LogCreate,
   RoomCreate,
+  RoomUpdate,
   TaskCompletion,
   TaskConsumableCreate,
   TaskCreate,
 } from './types';
+import { useSelectedHomeId } from '@/homes/selected-home';
 
 /**
- * Resolve the "current" home. Phase 1/2 is single-home: pick the first home,
- * creating a default one the first time the app runs.
+ * Load all homes, bootstrapping a default one the first time the app runs.
  */
-export function useCurrentHome() {
+export function useHomes() {
   return useQuery({
-    queryKey: queryKeys.currentHome,
+    queryKey: queryKeys.homes,
     queryFn: async () => {
       const homes = await listHomes();
-      if (homes.length > 0) return homes[0];
-      return createHome({ name: 'My Home' });
+      if (homes.length === 0) {
+        return [await createHome({ name: 'My Home' })];
+      }
+      return homes;
+    },
+  });
+}
+
+/**
+ * The currently selected home (or the first one). Returns a query-like object
+ * so callers can keep using `.data` / `.isLoading` / `.error`.
+ */
+export function useCurrentHome() {
+  const selectedId = useSelectedHomeId();
+  const homesQuery = useHomes();
+  const homes = homesQuery.data ?? [];
+  const current = homes.find((home) => home.id === selectedId) ?? homes[0];
+  return { ...homesQuery, data: current };
+}
+
+export function useCreateHome() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: HomeCreate) => createHome(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.homes });
     },
   });
 }
@@ -151,6 +179,17 @@ export function useCreateRoom(homeId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.rooms(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useUpdateRoom(homeId: string, roomId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RoomUpdate) => updateRoom(roomId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.room(roomId) });
+      qc.invalidateQueries({ queryKey: queryKeys.rooms(homeId) });
     },
   });
 }
@@ -273,6 +312,20 @@ export function useCreateLog(homeId: string, deviceId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.deviceLogs(deviceId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+    },
+  });
+}
+
+export function useDeleteTask(homeId: string, deviceId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (taskId: string) => deleteTask(taskId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      if (deviceId) {
+        qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
+      }
     },
   });
 }

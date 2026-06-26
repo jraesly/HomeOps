@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
 import { useCurrentHome, useHomeTasks } from '@/api/hooks';
+import { hydrateSelectedHome } from '@/homes/selected-home';
 import {
   configureNotificationHandler,
   syncReminders,
@@ -25,6 +26,7 @@ export function ReminderSync() {
   useEffect(() => {
     configureNotificationHandler();
     void hydrateSettings();
+    void hydrateSelectedHome();
   }, []);
 
   useEffect(() => {

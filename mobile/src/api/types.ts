@@ -190,6 +190,13 @@ export interface RoomCreate {
   notes?: string | null;
 }
 
+export interface RoomUpdate {
+  name?: string;
+  area_id?: string | null;
+  room_type?: string | null;
+  notes?: string | null;
+}
+
 export interface DeviceCreate {
   name: string;
   device_type?: DeviceType;

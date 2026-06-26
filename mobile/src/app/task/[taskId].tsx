@@ -1,11 +1,12 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
 
 import {
   useCompleteTask,
   useConsumables,
   useCurrentHome,
+  useDeleteTask,
   useLinkTaskConsumable,
   useTask,
   useTaskConsumables,
@@ -34,6 +35,10 @@ export default function TaskDetailScreen() {
   const taskQuery = useTask(taskId);
   const task = taskQuery.data;
   const completeTask = useCompleteTask(task?.home_id ?? '');
+  const deleteTask = useDeleteTask(
+    task?.home_id ?? '',
+    task?.device_id ?? null,
+  );
 
   const [notes, setNotes] = useState('');
   const [cost, setCost] = useState('');
@@ -77,6 +82,22 @@ export default function TaskDetailScreen() {
         },
       },
       { onSuccess: () => router.back() },
+    );
+  };
+
+  const onDelete = () => {
+    Alert.alert(
+      'Delete task?',
+      `"${task.title}" will be permanently removed. Its past logs are kept.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () =>
+            deleteTask.mutate(task.id, { onSuccess: () => router.back() }),
+        },
+      ],
     );
   };
 
@@ -167,6 +188,13 @@ export default function TaskDetailScreen() {
             </ThemedText>
           </View>
         )}
+
+        <Button
+          label="Delete Task"
+          variant="secondary"
+          onPress={onDelete}
+          loading={deleteTask.isPending}
+        />
       </Screen>
     </>
   );
