@@ -1,17 +1,23 @@
+import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
+import { completeTask } from '@/api/endpoints';
 import {
   useCreateHome,
   useCurrentHome,
   useHomeTasks,
   useHomes,
 } from '@/api/hooks';
+import { queryKeys } from '@/api/keys';
 import { hydrateSelectedHome } from '@/homes/selected-home';
 import {
+  ACTION_COMPLETE,
+  ACTION_SNOOZE,
   configureNotificationHandler,
+  snoozeReminder,
   syncReminders,
 } from '@/reminders/scheduler';
 import { hydrateSettings, useReminderSettings } from '@/reminders/settings';
@@ -29,6 +35,7 @@ import {
  */
 export function ReminderSync() {
   const router = useRouter();
+  const qc = useQueryClient();
   const settings = useReminderSettings();
   const overrides = useTaskOverrides();
   const homesQuery = useHomes();
@@ -38,6 +45,8 @@ export function ReminderSync() {
   const tasks = tasksQuery.data;
 
   const bootstrapped = useRef(false);
+  const homeIdRef = useRef<string | undefined>(undefined);
+  homeIdRef.current = homeQuery.data?.id;
 
   useEffect(() => {
     configureNotificationHandler();
@@ -63,14 +72,33 @@ export function ReminderSync() {
     if (Platform.OS === 'web') return;
     const sub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        const taskId = response.notification.request.content.data?.taskId;
-        if (typeof taskId === 'string') {
+        const content = response.notification.request.content;
+        const taskId = content.data?.taskId;
+        if (typeof taskId !== 'string') return;
+
+        if (response.actionIdentifier === ACTION_COMPLETE) {
+          // Complete the task straight from the notification.
+          completeTask(taskId, {})
+            .then(() => {
+              const homeId = homeIdRef.current;
+              if (!homeId) return;
+              qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+              qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
+              qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
+            })
+            .catch(() => {
+              // Network/auth failure — fall back to opening the task.
+              router.push(`/task/${taskId}`);
+            });
+        } else if (response.actionIdentifier === ACTION_SNOOZE) {
+          void snoozeReminder(taskId, content.body ?? 'Task reminder');
+        } else {
           router.push(`/task/${taskId}`);
         }
       },
     );
     return () => sub.remove();
-  }, [router]);
+  }, [router, qc]);
 
   useEffect(() => {
     if (!tasks) return;
