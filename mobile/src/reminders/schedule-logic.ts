@@ -11,6 +11,16 @@ export interface PendingReminder {
   dueDate: string;
 }
 
+/** Per-task override of the global reminder settings. */
+export interface TaskReminderOverride {
+  /** Silence reminders for this task regardless of global settings. */
+  muted?: boolean;
+  /** Custom lead-time offsets for this task (replaces the global ones). */
+  leadDays?: number[];
+}
+
+export type TaskReminderOverrides = Record<string, TaskReminderOverride>;
+
 /** Local trigger date for a task at a given lead time (days before due). */
 export function triggerDateFor(
   dueIso: string,
@@ -32,6 +42,7 @@ export function triggerDateFor(
 export function scheduleSignature(
   tasks: Task[],
   settings: ReminderSettings,
+  overrides: TaskReminderOverrides = {},
 ): string {
   const head = `${settings.enabled}|${settings.hour}:${settings.minute}|${[
     ...settings.leadDays,
@@ -40,7 +51,11 @@ export function scheduleSignature(
     .join(',')}`;
   const body = tasks
     .filter((task) => task.status === 'active' && task.due_date)
-    .map((task) => `${task.id}:${task.due_date}:${task.title}`)
+    .map((task) => {
+      const o = overrides[task.id];
+      const over = o ? `${o.muted ? 'm' : ''}${(o.leadDays ?? []).join(',')}` : '';
+      return `${task.id}:${task.due_date}:${task.title}:${over}`;
+    })
     .sort()
     .join('|');
   return `${head}#${body}`;
@@ -54,16 +69,23 @@ export function buildPendingReminders(
   tasks: Task[],
   settings: ReminderSettings,
   now: number,
+  overrides: TaskReminderOverrides = {},
 ): PendingReminder[] {
-  if (!settings.enabled || settings.leadDays.length === 0) return [];
+  if (!settings.enabled) return [];
 
   const pending: PendingReminder[] = [];
   for (const task of tasks) {
     if (task.status !== 'active' || !task.due_date) continue;
-    for (const leadDays of settings.leadDays) {
+
+    const override = overrides[task.id];
+    if (override?.muted) continue;
+    // A per-task lead-time list replaces the global one when present.
+    const leadDays = override?.leadDays ?? settings.leadDays;
+
+    for (const lead of leadDays) {
       const date = triggerDateFor(
         task.due_date,
-        leadDays,
+        lead,
         settings.hour,
         settings.minute,
       );

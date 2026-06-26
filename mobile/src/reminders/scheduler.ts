@@ -6,6 +6,7 @@ import { formatDate } from '@/utils/format';
 import {
   buildPendingReminders,
   scheduleSignature,
+  type TaskReminderOverrides,
 } from './schedule-logic';
 import type { ReminderSettings } from './settings';
 
@@ -54,15 +55,16 @@ export async function requestReminderPermission(): Promise<boolean> {
 export async function syncReminders(
   tasks: Task[],
   settings: ReminderSettings,
+  overrides: TaskReminderOverrides = {},
 ): Promise<void> {
   if (Platform.OS === 'web') return;
 
-  const signature = scheduleSignature(tasks, settings);
+  const signature = scheduleSignature(tasks, settings, overrides);
   if (signature === lastSignature) return;
 
   await Notifications.cancelAllScheduledNotificationsAsync();
 
-  const pending = buildPendingReminders(tasks, settings, Date.now());
+  const pending = buildPendingReminders(tasks, settings, Date.now(), overrides);
   if (pending.length === 0) {
     lastSignature = signature;
     return;

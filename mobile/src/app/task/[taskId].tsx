@@ -28,6 +28,14 @@ import { TextField } from '@/components/ui/text-field';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
 import {
+  LEAD_TIME_OPTIONS,
+  useReminderSettings,
+} from '@/reminders/settings';
+import {
+  setTaskOverride,
+  useTaskOverride,
+} from '@/reminders/task-overrides';
+import {
   describeDue,
   describeRecurrence,
   humanize,
@@ -136,6 +144,10 @@ function TaskDetailContent({ task }: { task: Task }) {
 
         <Card>
           <TaskEdit task={task} />
+        </Card>
+
+        <Card>
+          <TaskReminders taskId={task.id} />
         </Card>
 
         <TaskParts taskId={task.id} homeId={task.home_id} />
@@ -267,6 +279,71 @@ function TaskEdit({ task }: { task: Task }) {
   );
 }
 
+function TaskReminders({ taskId }: { taskId: string }) {
+  const settings = useReminderSettings();
+  const override = useTaskOverride(taskId);
+
+  if (!settings.enabled) {
+    return (
+      <>
+        <ThemedText type="smallBold">Reminders</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          Reminders are off. Turn them on in Settings to be notified about this
+          task.
+        </ThemedText>
+      </>
+    );
+  }
+
+  const muted = override.muted === true;
+  const custom = override.leadDays !== undefined;
+  const leadDays = override.leadDays ?? settings.leadDays;
+
+  const toggleLead = (days: number) => {
+    const has = leadDays.includes(days);
+    const next = has
+      ? leadDays.filter((d) => d !== days)
+      : [...leadDays, days].sort((a, b) => a - b);
+    void setTaskOverride(taskId, { leadDays: next });
+  };
+
+  return (
+    <>
+      <ThemedText type="smallBold">Reminders</ThemedText>
+      <Toggle
+        label="Remind me about this task"
+        value={!muted}
+        onChange={(on) => setTaskOverride(taskId, { muted: !on })}
+      />
+      {!muted ? (
+        <>
+          <Toggle
+            label="Use custom times for this task"
+            value={custom}
+            onChange={(on) =>
+              setTaskOverride(taskId, {
+                leadDays: on ? settings.leadDays : undefined,
+              })
+            }
+          />
+          {custom ? (
+            <View style={styles.taskLeadTimes}>
+              {LEAD_TIME_OPTIONS.map((option) => (
+                <Toggle
+                  key={option.days}
+                  label={option.label}
+                  value={leadDays.includes(option.days)}
+                  onChange={() => toggleLead(option.days)}
+                />
+              ))}
+            </View>
+          ) : null}
+        </>
+      ) : null}
+    </>
+  );
+}
+
 function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <CardRow>
@@ -370,4 +447,5 @@ const styles = StyleSheet.create({
   flexShrink: { flexShrink: 1 },
   addPart: { gap: Spacing.two, paddingTop: Spacing.one },
   editForm: { gap: Spacing.two },
+  taskLeadTimes: { gap: Spacing.two, paddingTop: Spacing.one },
 });

@@ -124,4 +124,42 @@ describe('buildPendingReminders', () => {
       MAX_SCHEDULED,
     );
   });
+
+  it('skips muted tasks', () => {
+    const tasks = [makeTask({ id: 'a', due_date: '2026-07-01' })];
+    const pending = buildPendingReminders(tasks, settings(), now, {
+      a: { muted: true },
+    });
+    expect(pending).toHaveLength(0);
+  });
+
+  it('uses a task override lead time instead of the global one', () => {
+    const tasks = [makeTask({ id: 'a', due_date: '2026-07-01' })];
+    // Global lead time is [0]; override to [1, 3] → two reminders.
+    const pending = buildPendingReminders(tasks, settings({ leadDays: [0] }), now, {
+      a: { leadDays: [1, 3] },
+    });
+    expect(pending).toHaveLength(2);
+  });
+
+  it('lets a task opt in even when global lead times are empty', () => {
+    const tasks = [makeTask({ id: 'a', due_date: '2026-07-01' })];
+    const pending = buildPendingReminders(tasks, settings({ leadDays: [] }), now, {
+      a: { leadDays: [1] },
+    });
+    expect(pending).toHaveLength(1);
+  });
+});
+
+describe('scheduleSignature with overrides', () => {
+  const tasks = [makeTask({ id: 'a', due_date: '2026-07-01', title: 'A' })];
+  it('changes when an override changes', () => {
+    const base = scheduleSignature(tasks, settings());
+    expect(scheduleSignature(tasks, settings(), { a: { muted: true } })).not.toBe(
+      base,
+    );
+    expect(
+      scheduleSignature(tasks, settings(), { a: { leadDays: [1] } }),
+    ).not.toBe(base);
+  });
 });
