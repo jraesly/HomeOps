@@ -2,42 +2,34 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
 import { useCurrentHome, useDashboard } from '@/api/hooks';
-import type { MaintenanceLog } from '@/api/types';
+import type { Dashboard, MaintenanceLog } from '@/api/types';
 import { DeviceCard } from '@/components/device-card';
 import { ThemedText } from '@/components/themed-text';
 import { TaskCard } from '@/components/task-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { QueryBoundary } from '@/components/ui/query-boundary';
+import { EmptyView } from '@/components/ui/state-views';
 import { Screen } from '@/components/ui/screen';
 import { Spacing } from '@/constants/theme';
 import { formatCost, formatDate } from '@/utils/format';
 
 export default function DashboardScreen() {
-  const router = useRouter();
   const homeQuery = useCurrentHome();
-  const home = homeQuery.data;
-  const dashboardQuery = useDashboard(home?.id);
+  const dashboardQuery = useDashboard(homeQuery.data?.id);
 
-  if (homeQuery.isLoading || dashboardQuery.isLoading) {
-    return (
-      <Screen title="HomeOps">
-        <LoadingView />
-      </Screen>
-    );
-  }
+  return (
+    <QueryBoundary
+      title="HomeOps"
+      query={dashboardQuery}
+      gates={[homeQuery]}>
+      {(data) => <DashboardContent data={data} />}
+    </QueryBoundary>
+  );
+}
 
-  const error = homeQuery.error ?? dashboardQuery.error;
-  if (error || !dashboardQuery.data) {
-    return (
-      <Screen title="HomeOps">
-        <ErrorView error={error ?? new Error('No dashboard data')} />
-      </Screen>
-    );
-  }
-
-  const data = dashboardQuery.data;
-
+function DashboardContent({ data }: { data: Dashboard }) {
+  const router = useRouter();
   return (
     <Screen title={data.home_name}>
       <Card>

@@ -1,17 +1,43 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.device import Device
+from app.models.enums import TaskStatus
 from app.models.home import Home
+from app.models.maintenance_task import MaintenanceTask
 from app.models.room import Room
 from app.routers.deps import get_or_404
 from app.schemas.device import DeviceCreate, DeviceRead, DeviceUpdate
 
 router = APIRouter(tags=["devices"])
+
+
+def _next_due_map(db: Session, home_id: uuid.UUID) -> dict[uuid.UUID, date]:
+    """Soonest active, dated task due-date per device, in one query."""
+    rows = db.execute(
+        select(
+            MaintenanceTask.device_id, func.min(MaintenanceTask.due_date)
+        )
+        .where(
+            MaintenanceTask.home_id == home_id,
+            MaintenanceTask.status == TaskStatus.active.value,
+            MaintenanceTask.due_date.is_not(None),
+            MaintenanceTask.device_id.is_not(None),
+        )
+        .group_by(MaintenanceTask.device_id)
+    ).all()
+    return {device_id: due for device_id, due in rows}
+
+
+def _with_next_due(device: Device, next_due: date | None) -> DeviceRead:
+    read = DeviceRead.model_validate(device)
+    read.next_due = next_due
+    return read
 
 
 def _validate_room(db: Session, home_id: uuid.UUID, room_id: uuid.UUID | None) -> None:
@@ -61,18 +87,30 @@ def create_device_in_home(
 
 
 @router.get("/homes/{home_id}/devices", response_model=list[DeviceRead])
-def list_devices(home_id: uuid.UUID, db: Session = Depends(get_db)) -> list[Device]:
+def list_devices(
+    home_id: uuid.UUID, db: Session = Depends(get_db)
+) -> list[DeviceRead]:
     get_or_404(db, Home, home_id, "Home")
-    return list(
-        db.scalars(
-            select(Device).where(Device.home_id == home_id).order_by(Device.name)
-        ).all()
-    )
+    devices = db.scalars(
+        select(Device).where(Device.home_id == home_id).order_by(Device.name)
+    ).all()
+    next_due = _next_due_map(db, home_id)
+    return [_with_next_due(device, next_due.get(device.id)) for device in devices]
 
 
 @router.get("/devices/{device_id}", response_model=DeviceRead)
-def get_device(device_id: uuid.UUID, db: Session = Depends(get_db)) -> Device:
-    return get_or_404(db, Device, device_id, "Device")
+def get_device(
+    device_id: uuid.UUID, db: Session = Depends(get_db)
+) -> DeviceRead:
+    device = get_or_404(db, Device, device_id, "Device")
+    next_due = db.scalar(
+        select(func.min(MaintenanceTask.due_date)).where(
+            MaintenanceTask.device_id == device_id,
+            MaintenanceTask.status == TaskStatus.active.value,
+            MaintenanceTask.due_date.is_not(None),
+        )
+    )
+    return _with_next_due(device, next_due)
 
 
 @router.patch("/devices/{device_id}", response_model=DeviceRead)

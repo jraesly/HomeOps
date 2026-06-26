@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     app_name: str = "HomeOps API"
     environment: str = "local"
     database_url: str = "postgresql+psycopg://homeops:homeops@localhost:5432/homeops"
+    # Shared API key. When empty, auth is disabled (open API); set it in the
+    # deployment environment to require the X-API-Key header on all data routes.
+    api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -13,6 +13,7 @@ import {
   useUnlinkTaskConsumable,
   useUpdateTask,
 } from '@/api/hooks';
+import { PRIORITIES, RECURRENCE_OPTIONS } from '@/api/enums';
 import type { Priority, RecurrenceType, Task } from '@/api/types';
 import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
@@ -20,8 +21,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
 import { Collapsible } from '@/components/ui/collapsible';
+import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
@@ -32,47 +34,26 @@ import {
   priorityColor,
 } from '@/utils/format';
 
-const PRIORITIES: readonly Priority[] = ['low', 'medium', 'high', 'critical'];
-const RECURRENCE_OPTIONS: readonly RecurrenceType[] = [
-  'none',
-  'weekly',
-  'monthly',
-  'quarterly',
-  'yearly',
-  'custom_days',
-];
-
 export default function TaskDetailScreen() {
   const { taskId } = useLocalSearchParams<{ taskId: string }>();
-  const router = useRouter();
   const taskQuery = useTask(taskId);
-  const task = taskQuery.data;
-  const completeTask = useCompleteTask(task?.home_id ?? '');
-  const deleteTask = useDeleteTask(
-    task?.home_id ?? '',
-    task?.device_id ?? null,
+  return (
+    <QueryBoundary query={taskQuery} title="Task">
+      {(task) => <TaskDetailContent task={task} />}
+    </QueryBoundary>
   );
+}
+
+function TaskDetailContent({ task }: { task: Task }) {
+  const router = useRouter();
+  const completeTask = useCompleteTask(task.home_id);
+  const deleteTask = useDeleteTask(task.home_id, task.device_id);
 
   const [notes, setNotes] = useState('');
   const [cost, setCost] = useState('');
   const [performedBy, setPerformedBy] = useState('');
   const [completedDate, setCompletedDate] = useState('');
   const [deductInventory, setDeductInventory] = useState(true);
-
-  if (taskQuery.isLoading) {
-    return (
-      <Screen title="Task">
-        <LoadingView />
-      </Screen>
-    );
-  }
-  if (taskQuery.error || !task) {
-    return (
-      <Screen title="Task">
-        <ErrorView error={taskQuery.error ?? new Error('Task not found')} />
-      </Screen>
-    );
-  }
 
   const isActive = task.status === 'active' || task.status === 'completed_once';
 

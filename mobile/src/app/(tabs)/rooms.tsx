@@ -9,13 +9,14 @@ import {
   useCurrentHome,
   useRooms,
 } from '@/api/hooks';
-import type { Area, Room } from '@/api/types';
+import type { Area, Home, Room } from '@/api/types';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
+import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 
@@ -27,28 +28,36 @@ export default function RoomsScreen() {
   const areasQuery = useAreas(home?.id);
   const roomsQuery = useRooms(home?.id);
 
-  if (homeQuery.isLoading || roomsQuery.isLoading || areasQuery.isLoading) {
-    return (
-      <Screen title="Rooms">
-        <LoadingView />
-      </Screen>
-    );
-  }
+  return (
+    <QueryBoundary
+      title="Rooms"
+      query={roomsQuery}
+      gates={[homeQuery, areasQuery]}>
+      {(rooms) =>
+        home ? (
+          <RoomsContent
+            home={home}
+            rooms={rooms}
+            areas={areasQuery.data ?? []}
+          />
+        ) : null
+      }
+    </QueryBoundary>
+  );
+}
 
-  const error = homeQuery.error ?? roomsQuery.error ?? areasQuery.error;
-  if (error || !home) {
-    return (
-      <Screen title="Rooms">
-        <ErrorView error={error ?? new Error('No home')} />
-      </Screen>
-    );
-  }
-
-  const areas = [...(areasQuery.data ?? [])].sort(
+function RoomsContent({
+  home,
+  rooms,
+  areas: rawAreas,
+}: {
+  home: Home;
+  rooms: Room[];
+  areas: Area[];
+}) {
+  const areas = [...rawAreas].sort(
     (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name),
   );
-  const rooms = roomsQuery.data ?? [];
-
   const groups = buildGroups(areas, rooms);
 
   return (

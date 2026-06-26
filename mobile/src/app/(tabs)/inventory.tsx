@@ -13,8 +13,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
+import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 
@@ -23,42 +24,30 @@ export default function InventoryScreen() {
   const home = homeQuery.data;
   const consumablesQuery = useConsumables(home?.id);
 
-  if (homeQuery.isLoading || consumablesQuery.isLoading) {
-    return (
-      <Screen title="Inventory">
-        <LoadingView />
-      </Screen>
-    );
-  }
-
-  const error = homeQuery.error ?? consumablesQuery.error;
-  if (error || !home) {
-    return (
-      <Screen title="Inventory">
-        <ErrorView error={error ?? new Error('No home')} />
-      </Screen>
-    );
-  }
-
-  const consumables = consumablesQuery.data ?? [];
-
   return (
-    <Screen title="Inventory">
-      <AddConsumable homeId={home.id} />
-      <View style={styles.list}>
-        {consumables.length === 0 ? (
-          <EmptyView message="No consumables yet. Add filters, salt, batteries…" />
-        ) : (
-          consumables.map((consumable) => (
-            <ConsumableRow
-              key={consumable.id}
-              homeId={home.id}
-              consumable={consumable}
-            />
-          ))
-        )}
-      </View>
-    </Screen>
+    <QueryBoundary
+      title="Inventory"
+      query={consumablesQuery}
+      gates={[homeQuery]}>
+      {(consumables) => (
+        <Screen title="Inventory">
+          {home ? <AddConsumable homeId={home.id} /> : null}
+          <View style={styles.list}>
+            {consumables.length === 0 ? (
+              <EmptyView message="No consumables yet. Add filters, salt, batteries…" />
+            ) : (
+              consumables.map((consumable) => (
+                <ConsumableRow
+                  key={consumable.id}
+                  homeId={consumable.home_id}
+                  consumable={consumable}
+                />
+              ))
+            )}
+          </View>
+        </Screen>
+      )}
+    </QueryBoundary>
   );
 }
 

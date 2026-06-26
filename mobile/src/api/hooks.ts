@@ -51,19 +51,12 @@ import type {
 } from './types';
 import { useSelectedHomeId } from '@/homes/selected-home';
 
-/**
- * Load all homes, bootstrapping a default one the first time the app runs.
- */
+/** Load all homes. (Default-home creation is handled explicitly at app start,
+ * not here — reads must stay side-effect free.) */
 export function useHomes() {
   return useQuery({
     queryKey: queryKeys.homes,
-    queryFn: async () => {
-      const homes = await listHomes();
-      if (homes.length === 0) {
-        return [await createHome({ name: 'My Home' })];
-      }
-      return homes;
-    },
+    queryFn: listHomes,
   });
 }
 
@@ -230,6 +223,8 @@ export function useCreateTask(homeId: string, deviceId: string) {
       qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      // device.next_due is derived from its tasks.
+      qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
     },
   });
 }
@@ -263,6 +258,8 @@ export function useUpdateConsumable(homeId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      // A renamed/edited consumable appears in tasks' Parts lists.
+      qc.invalidateQueries({ queryKey: ['taskConsumables'] });
     },
   });
 }
@@ -274,6 +271,8 @@ export function useDeleteConsumable(homeId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      // Deleting a consumable cascades its task links away.
+      qc.invalidateQueries({ queryKey: ['taskConsumables'] });
     },
   });
 }
@@ -327,6 +326,7 @@ export function useUpdateTask(homeId: string, deviceId: string | null) {
       qc.invalidateQueries({ queryKey: queryKeys.task(task.id) });
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
       if (deviceId) {
         qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
       }
@@ -341,6 +341,7 @@ export function useDeleteTask(homeId: string, deviceId: string | null) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
       if (deviceId) {
         qc.invalidateQueries({ queryKey: queryKeys.deviceTasks(deviceId) });
       }
@@ -359,6 +360,7 @@ export function useCompleteTask(homeId: string) {
       qc.invalidateQueries({ queryKey: queryKeys.dashboard(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.homeTasks(homeId) });
       qc.invalidateQueries({ queryKey: queryKeys.consumables(homeId) });
+      qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
       if (task.device_id) {
         qc.invalidateQueries({
           queryKey: queryKeys.deviceTasks(task.device_id),

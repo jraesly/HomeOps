@@ -40,14 +40,16 @@ class DeviceRead(ORMModel):
     home_id: uuid.UUID
     room_id: uuid.UUID | None
     name: str
-    device_type: str
+    device_type: DeviceType
     manufacturer: str | None
     model_number: str | None
     serial_number: str | None
     install_date: date | None
     purchase_date: date | None
     warranty_end_date: date | None
-    status: str
+    status: DeviceStatus
     notes: str | None
     created_at: datetime
     updated_at: datetime
+    # Soonest active, dated task for this device (computed; not a column).
+    next_due: date | None = None

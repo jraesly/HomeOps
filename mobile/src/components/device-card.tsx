@@ -4,20 +4,18 @@ import { StyleSheet, View } from 'react-native';
 import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
 import { Card, CardRow } from '@/components/ui/card';
-import type { Device, Task } from '@/api/types';
+import type { Device } from '@/api/types';
 import { describeDue, humanize, isOverdue } from '@/utils/format';
 
 type DeviceCardProps = {
   device: Device;
-  /** Soonest active task, used to surface the next due maintenance. */
-  nextTask?: Task | null;
   /** Optional room name shown when the card appears outside its room. */
   roomName?: string;
 };
 
-export function DeviceCard({ device, nextTask, roomName }: DeviceCardProps) {
+export function DeviceCard({ device, roomName }: DeviceCardProps) {
   const router = useRouter();
-  const overdue = isOverdue(nextTask?.due_date);
+  const overdue = isOverdue(device.next_due);
 
   const subtitle = roomName
     ? `${roomName} · ${device.device_type}`
@@ -34,13 +32,13 @@ export function DeviceCard({ device, nextTask, roomName }: DeviceCardProps) {
       <ThemedText type="small" themeColor="textSecondary">
         {subtitle}
       </ThemedText>
-      {nextTask ? (
+      {device.next_due ? (
         <View style={styles.nextRow}>
           <ThemedText
             type="small"
             themeColor={overdue ? undefined : 'textSecondary'}
             style={overdue ? styles.overdue : undefined}>
-            Next: {nextTask.title} · {describeDue(nextTask.due_date)}
+            Next: {describeDue(device.next_due)}
           </ThemedText>
         </View>
       ) : (

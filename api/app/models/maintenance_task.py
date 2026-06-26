@@ -12,10 +12,10 @@ class MaintenanceTask(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "maintenance_tasks"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     device_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True, index=True
     )
     title: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

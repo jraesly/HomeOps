@@ -11,13 +11,15 @@ class MaintenanceLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "maintenance_logs"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     device_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("devices.id", ondelete="SET NULL"), nullable=True, index=True
     )
     task_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("maintenance_tasks.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("maintenance_tasks.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     title: Mapped[str] = mapped_column(String(255))

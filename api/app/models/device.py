@@ -12,10 +12,10 @@ class Device(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "devices"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     room_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True, index=True
     )
     name: Mapped[str] = mapped_column(String(255))
     device_type: Mapped[str] = mapped_column(

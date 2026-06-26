@@ -10,7 +10,7 @@ class Area(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "areas"
 
     home_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("homes.id", ondelete="CASCADE")
+        ForeignKey("homes.id", ondelete="CASCADE"), index=True
     )
     name: Mapped[str] = mapped_column(String(255))
     sort_order: Mapped[int] = mapped_column(Integer, default=0)

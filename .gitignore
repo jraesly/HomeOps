@@ -22,3 +22,6 @@ yarn-error.log*
 
 # Local files
 uploads/
+
+# Generated OpenAPI dump (regenerate with `make openapi`)
+api/openapi.json
