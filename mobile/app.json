@@ -13,7 +13,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.jraesly.homeops",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.jraesly.homeops",
@@ -46,6 +49,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5937c217-3e15-4f63-9de0-96fd2b4f5474"
+      }
+    },
+    "owner": "jraesly"
   }
 }
