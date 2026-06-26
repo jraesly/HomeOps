@@ -6,65 +6,41 @@ import {
   useAreas,
   useCreateDevice,
   useDevices,
-  useHomeTasks,
   useRoom,
   useUpdateRoom,
 } from '@/api/hooks';
+import { DEVICE_TYPES } from '@/api/enums';
 import type { DeviceType, Room, TaskCreate } from '@/api/types';
 import { DeviceCard } from '@/components/device-card';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
+import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 import { DEVICE_TEMPLATES, type DeviceTemplate } from '@/data/device-templates';
 import { describeRecurrence, todayISO } from '@/utils/format';
-import { nextDueTask } from '@/utils/tasks';
 
 const NO_AREA = '';
-
-const DEVICE_TYPES: readonly DeviceType[] = [
-  'HVAC',
-  'Water Treatment',
-  'Appliance',
-  'Plumbing',
-  'Electrical',
-  'Exterior',
-  'Garden',
-  'Safety',
-  'Network',
-  'Other',
-];
 
 const CUSTOM = 'custom';
 
 export default function RoomDetailScreen() {
   const { roomId } = useLocalSearchParams<{ roomId: string }>();
   const roomQuery = useRoom(roomId);
-  const room = roomQuery.data;
-  const devicesQuery = useDevices(room?.home_id);
-  const tasksQuery = useHomeTasks(room?.home_id);
+  return (
+    <QueryBoundary query={roomQuery} title="Room">
+      {(room) => <RoomDetailContent room={room} />}
+    </QueryBoundary>
+  );
+}
 
-  if (roomQuery.isLoading) {
-    return (
-      <Screen title="Room">
-        <LoadingView />
-      </Screen>
-    );
-  }
-  if (roomQuery.error || !room) {
-    return (
-      <Screen title="Room">
-        <ErrorView error={roomQuery.error ?? new Error('Room not found')} />
-      </Screen>
-    );
-  }
-
+function RoomDetailContent({ room }: { room: Room }) {
+  const devicesQuery = useDevices(room.home_id);
   const devices = (devicesQuery.data ?? []).filter((d) => d.room_id === room.id);
-  const tasks = tasksQuery.data ?? [];
 
   return (
     <>
@@ -80,11 +56,7 @@ export default function RoomDetailScreen() {
             <EmptyView message="No devices in this room yet." />
           ) : (
             devices.map((device) => (
-              <DeviceCard
-                key={device.id}
-                device={device}
-                nextTask={nextDueTask(tasks, device.id)}
-              />
+              <DeviceCard key={device.id} device={device} />
             ))
           )}
         </View>

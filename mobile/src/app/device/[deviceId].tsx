@@ -9,14 +9,16 @@ import {
   useDeviceLogs,
   useDeviceTasks,
 } from '@/api/hooks';
-import type { Priority, RecurrenceType, TaskType } from '@/api/types';
+import { PRIORITIES, RECURRENCE_OPTIONS, TASK_TYPES } from '@/api/enums';
+import type { Device, Priority, RecurrenceType, TaskType } from '@/api/types';
 import { ThemedText } from '@/components/themed-text';
 import { TaskCard } from '@/components/task-card';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
+import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
-import { EmptyView, ErrorView, LoadingView } from '@/components/ui/state-views';
+import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
@@ -27,53 +29,23 @@ import {
   humanize,
 } from '@/utils/format';
 
-const RECURRENCE_OPTIONS: readonly RecurrenceType[] = [
-  'none',
-  'weekly',
-  'monthly',
-  'quarterly',
-  'yearly',
-  'custom_days',
-];
-
-const TASK_TYPES: readonly TaskType[] = [
-  'inspect',
-  'clean',
-  'test',
-  'service',
-  'refill',
-  'replace_filter',
-  'winterize',
-  'other',
-];
-
-const PRIORITIES: readonly Priority[] = ['low', 'medium', 'high', 'critical'];
-
 const SECTIONS = ['Overview', 'Tasks', 'History'] as const;
 type Section = (typeof SECTIONS)[number];
 
 export default function DeviceDetailScreen() {
   const { deviceId } = useLocalSearchParams<{ deviceId: string }>();
-  const [section, setSection] = useState<Section>('Overview');
   const deviceQuery = useDevice(deviceId);
-  const tasksQuery = useDeviceTasks(deviceId);
-  const logsQuery = useDeviceLogs(deviceId);
-  const device = deviceQuery.data;
+  return (
+    <QueryBoundary query={deviceQuery} title="Device">
+      {(device) => <DeviceDetailContent device={device} />}
+    </QueryBoundary>
+  );
+}
 
-  if (deviceQuery.isLoading) {
-    return (
-      <Screen title="Device">
-        <LoadingView />
-      </Screen>
-    );
-  }
-  if (deviceQuery.error || !device) {
-    return (
-      <Screen title="Device">
-        <ErrorView error={deviceQuery.error ?? new Error('Device not found')} />
-      </Screen>
-    );
-  }
+function DeviceDetailContent({ device }: { device: Device }) {
+  const [section, setSection] = useState<Section>('Overview');
+  const tasksQuery = useDeviceTasks(device.id);
+  const logsQuery = useDeviceLogs(device.id);
 
   const tasks = tasksQuery.data ?? [];
   const logs = logsQuery.data ?? [];

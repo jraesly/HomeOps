@@ -43,9 +43,9 @@ class TaskRead(ORMModel):
     device_id: uuid.UUID | None
     title: str
     description: str | None
-    task_type: str
-    priority: str
-    recurrence_type: str
+    task_type: TaskType
+    priority: Priority
+    recurrence_type: RecurrenceType
     recurrence_interval: int
     due_date: date | None
     last_completed_at: datetime | None
@@ -53,6 +53,6 @@ class TaskRead(ORMModel):
     instructions: str | None
     requires_parts: bool
     contractor_required: bool
-    status: str
+    status: TaskStatus
     created_at: datetime
     updated_at: datetime

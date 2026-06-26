@@ -3,13 +3,18 @@ import { Platform } from 'react-native';
 
 import type { Task } from '@/api/types';
 import { formatDate } from '@/utils/format';
+import {
+  buildPendingReminders,
+  scheduleSignature,
+} from './schedule-logic';
 import type { ReminderSettings } from './settings';
 
-// iOS caps locally scheduled notifications at 64; stay comfortably under it.
-const MAX_SCHEDULED = 60;
 const ANDROID_CHANNEL_ID = 'task-reminders';
 
 let handlerConfigured = false;
+
+// Skip rescheduling when the reminder-relevant state is unchanged.
+let lastSignature: string | null = null;
 
 /** Show reminders as banners even when the app is foregrounded. */
 export function configureNotificationHandler(): void {
@@ -42,23 +47,9 @@ export async function requestReminderPermission(): Promise<boolean> {
   return requested.granted;
 }
 
-/** Build the local trigger date for a task at a given lead time. */
-function triggerDateFor(
-  dueIso: string,
-  leadDays: number,
-  hour: number,
-  minute: number,
-): Date | null {
-  const due = new Date(`${dueIso}T00:00:00`);
-  if (Number.isNaN(due.getTime())) return null;
-  due.setDate(due.getDate() - leadDays);
-  due.setHours(hour, minute, 0, 0);
-  return due;
-}
-
 /**
- * Cancel all existing reminders and reschedule from the current task list and
- * settings. Called whenever tasks or settings change. No-op on web.
+ * Cancel and reschedule local reminders from the task list and settings.
+ * No-op on web, and skipped entirely when nothing relevant has changed.
  */
 export async function syncReminders(
   tasks: Task[],
@@ -66,45 +57,35 @@ export async function syncReminders(
 ): Promise<void> {
   if (Platform.OS === 'web') return;
 
+  const signature = scheduleSignature(tasks, settings);
+  if (signature === lastSignature) return;
+
   await Notifications.cancelAllScheduledNotificationsAsync();
-  if (!settings.enabled || settings.leadDays.length === 0) return;
+
+  const pending = buildPendingReminders(tasks, settings, Date.now());
+  if (pending.length === 0) {
+    lastSignature = signature;
+    return;
+  }
 
   await ensureAndroidChannel();
 
-  const now = Date.now();
-  const pending: { date: Date; task: Task }[] = [];
-
-  for (const task of tasks) {
-    if (task.status !== 'active' || !task.due_date) continue;
-    for (const leadDays of settings.leadDays) {
-      const date = triggerDateFor(
-        task.due_date,
-        leadDays,
-        settings.hour,
-        settings.minute,
-      );
-      if (date && date.getTime() > now) {
-        pending.push({ date, task });
-      }
-    }
-  }
-
-  pending.sort((a, b) => a.date.getTime() - b.date.getTime());
-
-  for (const { date, task } of pending.slice(0, MAX_SCHEDULED)) {
+  for (const reminder of pending) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'HomeOps reminder',
-        body: `${task.title} — due ${formatDate(task.due_date)}`,
-        data: { taskId: task.id },
+        body: `${reminder.title} — due ${formatDate(reminder.dueDate)}`,
+        data: { taskId: reminder.taskId },
         ...(Platform.OS === 'android'
           ? { channelId: ANDROID_CHANNEL_ID }
           : {}),
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date,
+        date: reminder.date,
       },
     });
   }
+
+  lastSignature = signature;
 }
