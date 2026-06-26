@@ -11,13 +11,16 @@ import {
 import type { ReminderSettings } from './settings';
 
 const ANDROID_CHANNEL_ID = 'task-reminders';
+export const REMINDER_CATEGORY = 'task-reminder';
+export const ACTION_COMPLETE = 'COMPLETE';
+export const ACTION_SNOOZE = 'SNOOZE';
 
 let handlerConfigured = false;
 
 // Skip rescheduling when the reminder-relevant state is unchanged.
 let lastSignature: string | null = null;
 
-/** Show reminders as banners even when the app is foregrounded. */
+/** Show reminders as banners (foregrounded) and register their action buttons. */
 export function configureNotificationHandler(): void {
   if (handlerConfigured || Platform.OS === 'web') return;
   handlerConfigured = true;
@@ -28,6 +31,35 @@ export function configureNotificationHandler(): void {
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),
+  });
+  void Notifications.setNotificationCategoryAsync(REMINDER_CATEGORY, [
+    { identifier: ACTION_COMPLETE, buttonTitle: 'Complete' },
+    { identifier: ACTION_SNOOZE, buttonTitle: 'Snooze 1 day' },
+  ]);
+}
+
+/** Schedule a one-off reminder a day out (used by the Snooze action). */
+export async function snoozeReminder(
+  taskId: string,
+  body: string,
+  days = 1,
+): Promise<void> {
+  if (Platform.OS === 'web') return;
+  await ensureAndroidChannel();
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'HomeOps reminder',
+      body,
+      data: { taskId },
+      categoryIdentifier: REMINDER_CATEGORY,
+      ...(Platform.OS === 'android' ? { channelId: ANDROID_CHANNEL_ID } : {}),
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date,
+    },
   });
 }
 
@@ -78,6 +110,7 @@ export async function syncReminders(
         title: 'HomeOps reminder',
         body: `${reminder.title} — due ${formatDate(reminder.dueDate)}`,
         data: { taskId: reminder.taskId },
+        categoryIdentifier: REMINDER_CATEGORY,
         ...(Platform.OS === 'android'
           ? { channelId: ANDROID_CHANNEL_ID }
           : {}),

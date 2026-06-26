@@ -9,6 +9,7 @@ from app.models.base import Base
 from app.models.consumable import Consumable, TaskConsumable
 from app.models.device import Device
 from app.models.home import Home
+from app.models.home_event import HomeEvent
 from app.models.maintenance_log import MaintenanceLog
 from app.models.maintenance_task import MaintenanceTask
 from app.models.room import Room
@@ -20,6 +21,7 @@ __all__ = [
     "Consumable",
     "Device",
     "Home",
+    "HomeEvent",
     "MaintenanceLog",
     "MaintenanceTask",
     "Room",

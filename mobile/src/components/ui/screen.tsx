@@ -9,7 +9,7 @@ import { useTheme } from '@/hooks/use-theme';
 type ScreenProps = {
   title?: string;
   subtitle?: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 /** Standard scrollable screen wrapper with safe-area + tab insets. */

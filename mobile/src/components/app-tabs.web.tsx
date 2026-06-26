@@ -18,6 +18,7 @@ const TABS: { name: string; href: string; label: string }[] = [
   { name: 'rooms', href: '/rooms', label: 'Rooms' },
   { name: 'tasks', href: '/tasks', label: 'Tasks' },
   { name: 'inventory', href: '/inventory', label: 'Inventory' },
+  { name: 'activity', href: '/activity', label: 'Activity' },
   { name: 'settings', href: '/settings', label: 'Settings' },
 ];
 

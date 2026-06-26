@@ -19,6 +19,7 @@ import {
   getDevice,
   getRoom,
   getTask,
+  getTimeline,
   linkTaskConsumable,
   listAreas,
   listConsumables,
@@ -29,6 +30,7 @@ import {
   listHomes,
   listRooms,
   listTaskConsumables,
+  searchHome,
   unlinkTaskConsumable,
   updateConsumable,
   updateRoom,
@@ -226,6 +228,25 @@ export function useCreateTask(homeId: string, deviceId: string) {
       // device.next_due is derived from its tasks.
       qc.invalidateQueries({ queryKey: queryKeys.devices(homeId) });
     },
+  });
+}
+
+// ---- Activity: timeline + search ----
+
+export function useTimeline(homeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.timeline(homeId ?? ''),
+    queryFn: () => getTimeline(homeId as string),
+    enabled: !!homeId,
+  });
+}
+
+export function useSearch(homeId: string | undefined, q: string) {
+  const term = q.trim();
+  return useQuery({
+    queryKey: queryKeys.search(homeId ?? '', term),
+    queryFn: () => searchHome(homeId as string, term),
+    enabled: !!homeId && term.length > 0,
   });
 }
 

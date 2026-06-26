@@ -119,6 +119,7 @@ def seed_demo_home(db: Session) -> Home:
         category="filter",
         quantity_on_hand=1,
         reorder_threshold=1,
+        reorder_url="https://www.amazon.com/s?k=whole+house+sediment+filter",
     )
     salt = Consumable(
         home_id=home.id,
@@ -126,6 +127,7 @@ def seed_demo_home(db: Session) -> Home:
         category="salt",
         quantity_on_hand=0,
         reorder_threshold=2,
+        reorder_url="https://www.amazon.com/s?k=water+softener+salt",
     )
     db.add_all([sediment, salt])
     db.flush()

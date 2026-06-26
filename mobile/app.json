@@ -36,6 +36,12 @@
       "expo-router",
       "expo-notifications",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow HomeOps to scan device QR codes."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
