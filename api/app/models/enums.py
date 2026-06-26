@@ -55,3 +55,11 @@ class TaskStatus(str, Enum):
     paused = "paused"
     completed_once = "completed_once"
     archived = "archived"
+
+
+class EventType(str, Enum):
+    device_created = "device_created"
+    task_created = "task_created"
+    task_completed = "task_completed"
+    log_added = "log_added"
+    inventory_used = "inventory_used"

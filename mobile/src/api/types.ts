@@ -20,6 +20,8 @@ export type TaskConsumable = Schemas['TaskConsumableRead'];
 export type Dashboard = Schemas['Dashboard'];
 export type DashboardCounts = Schemas['DashboardCounts'];
 export type TaskCompletionResult = Schemas['TaskCompletionResult'];
+export type HomeEvent = Schemas['HomeEventRead'];
+export type SearchResults = Schemas['SearchResults'];
 
 // Request payloads
 export type HomeCreate = Schemas['HomeCreate'];

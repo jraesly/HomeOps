@@ -9,9 +9,11 @@ from app.core.database import get_db
 from app.models.device import Device
 from app.models.home import Home
 from app.models.maintenance_log import MaintenanceLog
+from app.models.enums import EventType
 from app.models.maintenance_task import MaintenanceTask
 from app.routers.deps import get_or_404
 from app.schemas.log import LogCreate, LogRead
+from app.services.event_service import record_event
 
 router = APIRouter(tags=["logs"])
 
@@ -45,6 +47,18 @@ def create_device_log(
         performed_by=payload.performed_by,
     )
     db.add(log)
+    db.flush()
+    record_event(
+        db,
+        home_id=log.home_id,
+        event_type=EventType.log_added,
+        entity_type="log",
+        entity_id=log.id,
+        device_id=device_id,
+        title=log.title,
+        description=log.notes,
+        occurred_at=log.completed_at,
+    )
     db.commit()
     db.refresh(log)
     return log

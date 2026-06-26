@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
@@ -6,12 +7,14 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.device import Device
+from app.models.enums import EventType
 from app.models.home import Home
 from app.models.maintenance_task import MaintenanceTask
 from app.routers.deps import get_or_404
 from app.schemas.log import LogRead
 from app.schemas.task import TaskCreate, TaskRead, TaskUpdate
 from app.schemas.task_completion import TaskCompletion, TaskCompletionResult
+from app.services.event_service import record_event
 from app.services.task_service import complete_task
 
 router = APIRouter(tags=["tasks"])
@@ -30,6 +33,17 @@ def create_task(
         home_id=device.home_id, device_id=device_id, **payload.model_dump()
     )
     db.add(task)
+    db.flush()
+    record_event(
+        db,
+        home_id=task.home_id,
+        event_type=EventType.task_created,
+        entity_type="task",
+        entity_id=task.id,
+        device_id=device_id,
+        title=f"Added task: {task.title}",
+        occurred_at=datetime.now(timezone.utc),
+    )
     db.commit()
     db.refresh(task)
     return task

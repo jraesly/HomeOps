@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
@@ -7,14 +7,28 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.device import Device
-from app.models.enums import TaskStatus
+from app.models.enums import EventType, TaskStatus
 from app.models.home import Home
 from app.models.maintenance_task import MaintenanceTask
 from app.models.room import Room
 from app.routers.deps import get_or_404
 from app.schemas.device import DeviceCreate, DeviceRead, DeviceUpdate
+from app.services.event_service import record_event
 
 router = APIRouter(tags=["devices"])
+
+
+def _record_device_created(db: Session, device: Device) -> None:
+    record_event(
+        db,
+        home_id=device.home_id,
+        event_type=EventType.device_created,
+        entity_type="device",
+        entity_id=device.id,
+        device_id=device.id,
+        title=f"Added {device.name}",
+        occurred_at=datetime.now(timezone.utc),
+    )
 
 
 def _next_due_map(db: Session, home_id: uuid.UUID) -> dict[uuid.UUID, date]:
@@ -64,6 +78,8 @@ def create_device_in_room(
     data["room_id"] = room_id
     device = Device(home_id=room.home_id, **data)
     db.add(device)
+    db.flush()
+    _record_device_created(db, device)
     db.commit()
     db.refresh(device)
     return device
@@ -81,6 +97,8 @@ def create_device_in_home(
     _validate_room(db, home_id, payload.room_id)
     device = Device(home_id=home_id, **payload.model_dump())
     db.add(device)
+    db.flush()
+    _record_device_created(db, device)
     db.commit()
     db.refresh(device)
     return device

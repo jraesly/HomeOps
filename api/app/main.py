@@ -3,6 +3,7 @@ from fastapi import Depends, FastAPI
 from app.core.config import settings
 from app.core.security import require_api_key
 from app.routers import (
+    activity,
     areas,
     consumables,
     dashboard,
@@ -35,4 +36,5 @@ app.include_router(devices.router, dependencies=_auth)
 app.include_router(tasks.router, dependencies=_auth)
 app.include_router(logs.router, dependencies=_auth)
 app.include_router(consumables.router, dependencies=_auth)
+app.include_router(activity.router, dependencies=_auth)
 app.include_router(dashboard.router, dependencies=_auth)

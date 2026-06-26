@@ -6,10 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.consumable import TaskConsumable
-from app.models.enums import RecurrenceType, TaskStatus
+from app.models.enums import EventType, RecurrenceType, TaskStatus
 from app.models.maintenance_log import MaintenanceLog
 from app.models.maintenance_task import MaintenanceTask
 from app.schemas.task_completion import TaskCompletion
+from app.services.event_service import record_event
 from app.services.recurrence import calculate_next_due_date
 
 
@@ -56,8 +57,20 @@ def complete_task(
 
     task.last_completed_at = completed_at
 
+    record_event(
+        db,
+        home_id=task.home_id,
+        event_type=EventType.task_completed,
+        entity_type="task",
+        entity_id=task.id,
+        device_id=task.device_id,
+        title=f"Completed {task.title}",
+        description=payload.notes,
+        occurred_at=completed_at,
+    )
+
     if payload.deduct_inventory:
-        _deduct_consumables(db, task.id)
+        _deduct_consumables(db, task, completed_at)
 
     next_due = calculate_next_due_date(
         completed_at.date(), task.recurrence_type, task.recurrence_interval
@@ -77,15 +90,27 @@ def complete_task(
     return task, log
 
 
-def _deduct_consumables(db: Session, task_id: uuid.UUID) -> None:
+def _deduct_consumables(
+    db: Session, task: MaintenanceTask, occurred_at: datetime
+) -> None:
     """Decrement on-hand inventory for each consumable linked to the task."""
     links = db.scalars(
         select(TaskConsumable)
-        .where(TaskConsumable.task_id == task_id)
+        .where(TaskConsumable.task_id == task.id)
         .options(selectinload(TaskConsumable.consumable))
     ).all()
     for link in links:
         consumable = link.consumable
         consumable.quantity_on_hand = max(
             0, consumable.quantity_on_hand - link.quantity_required
+        )
+        record_event(
+            db,
+            home_id=task.home_id,
+            event_type=EventType.inventory_used,
+            entity_type="consumable",
+            entity_id=consumable.id,
+            device_id=task.device_id,
+            title=f"Used {link.quantity_required} × {consumable.name}",
+            occurred_at=occurred_at,
         )

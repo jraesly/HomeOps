@@ -10,9 +10,11 @@ import type {
   DeviceCreate,
   Home,
   HomeCreate,
+  HomeEvent,
   LogCreate,
   MaintenanceLog,
   Room,
+  SearchResults,
   RoomCreate,
   RoomUpdate,
   Task,
@@ -30,6 +32,14 @@ export const createHome = (payload: HomeCreate) =>
   apiFetch<Home>('/homes', { method: 'POST', body: payload });
 export const getDashboard = (homeId: string) =>
   apiFetch<Dashboard>(`/homes/${homeId}/dashboard`);
+
+// Activity (timeline + search)
+export const getTimeline = (homeId: string) =>
+  apiFetch<HomeEvent[]>(`/homes/${homeId}/timeline`);
+export const searchHome = (homeId: string, q: string) =>
+  apiFetch<SearchResults>(
+    `/homes/${homeId}/search?q=${encodeURIComponent(q)}`,
+  );
 
 // Areas
 export const listAreas = (homeId: string) =>
