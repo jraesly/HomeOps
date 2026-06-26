@@ -56,6 +56,9 @@
         "projectId": "5937c217-3e15-4f63-9de0-96fd2b4f5474"
       }
     },
-    "owner": "jraesly"
+    "owner": "jraesly",
+    "updates": {
+      "url": "https://u.expo.dev/5937c217-3e15-4f63-9de0-96fd2b4f5474"
+    }
   }
 }
