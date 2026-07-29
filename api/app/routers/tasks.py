@@ -15,6 +15,8 @@ from app.schemas.log import LogRead
 from app.schemas.task import TaskCreate, TaskRead, TaskUpdate
 from app.schemas.task_completion import TaskCompletion, TaskCompletionResult
 from app.services.event_service import record_event
+from app.services.recurrence import calculate_next_due_date
+from app.services.task_context import attach_task_context
 from app.services.task_service import complete_task
 
 router = APIRouter(tags=["tasks"])
@@ -29,8 +31,18 @@ def create_task(
     device_id: uuid.UUID, payload: TaskCreate, db: Session = Depends(get_db)
 ) -> MaintenanceTask:
     device = get_or_404(db, Device, device_id, "Device")
+    data = payload.model_dump()
+    # A recurring task created without a due date would otherwise never
+    # surface (reminders and overdue status key off due_date, and recurrence
+    # only rolls it forward on completion) — seed the first cycle from today.
+    if data["due_date"] is None:
+        data["due_date"] = calculate_next_due_date(
+            datetime.now(timezone.utc).date(),
+            payload.recurrence_type,
+            payload.recurrence_interval,
+        )
     task = MaintenanceTask(
-        home_id=device.home_id, device_id=device_id, **payload.model_dump()
+        home_id=device.home_id, device_id=device_id, **data
     )
     db.add(task)
     db.flush()
@@ -54,13 +66,15 @@ def list_home_tasks(
     home_id: uuid.UUID, db: Session = Depends(get_db)
 ) -> list[MaintenanceTask]:
     get_or_404(db, Home, home_id, "Home")
-    return list(
+    tasks = list(
         db.scalars(
             select(MaintenanceTask)
             .where(MaintenanceTask.home_id == home_id)
             .order_by(MaintenanceTask.due_date)
         ).all()
     )
+    attach_task_context(db, tasks)
+    return tasks
 
 
 @router.get("/devices/{device_id}/tasks", response_model=list[TaskRead])
@@ -68,18 +82,22 @@ def list_device_tasks(
     device_id: uuid.UUID, db: Session = Depends(get_db)
 ) -> list[MaintenanceTask]:
     get_or_404(db, Device, device_id, "Device")
-    return list(
+    tasks = list(
         db.scalars(
             select(MaintenanceTask)
             .where(MaintenanceTask.device_id == device_id)
             .order_by(MaintenanceTask.due_date)
         ).all()
     )
+    attach_task_context(db, tasks)
+    return tasks
 
 
 @router.get("/tasks/{task_id}", response_model=TaskRead)
 def get_task(task_id: uuid.UUID, db: Session = Depends(get_db)) -> MaintenanceTask:
-    return get_or_404(db, MaintenanceTask, task_id, "Task")
+    task = get_or_404(db, MaintenanceTask, task_id, "Task")
+    attach_task_context(db, [task])
+    return task
 
 
 @router.patch("/tasks/{task_id}", response_model=TaskRead)

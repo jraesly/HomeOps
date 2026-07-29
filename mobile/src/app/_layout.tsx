@@ -14,7 +14,10 @@ export default function RootLayout() {
         <AnimatedSplashOverlay />
         <ReminderSync />
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false, title: 'Home' }}
+          />
           <Stack.Screen name="room/[roomId]" options={{ title: 'Room' }} />
           <Stack.Screen name="device/[deviceId]" options={{ title: 'Device' }} />
           <Stack.Screen name="task/[taskId]" options={{ title: 'Task' }} />

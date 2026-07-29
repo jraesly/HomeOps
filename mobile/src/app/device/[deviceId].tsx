@@ -20,6 +20,7 @@ import { Chips } from '@/components/ui/chips';
 import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
 import { EmptyView } from '@/components/ui/state-views';
+import { DateField } from '@/components/ui/date-field';
 import { TextField } from '@/components/ui/text-field';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
@@ -244,11 +245,10 @@ function AddTask({ homeId, deviceId }: { homeId: string; deviceId: string }) {
         />
       ) : null}
 
-      <TextField
-        label="Due date (YYYY-MM-DD, optional)"
+      <DateField
+        label="Due date (optional)"
         value={dueDate}
-        onChangeText={setDueDate}
-        placeholder="2026-07-01"
+        onChange={setDueDate}
       />
       <TextField
         label="Estimated minutes (optional)"

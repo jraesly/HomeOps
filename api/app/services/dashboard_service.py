@@ -14,6 +14,7 @@ from app.schemas.dashboard import Dashboard, DashboardCounts
 from app.schemas.device import DeviceRead
 from app.schemas.log import LogRead
 from app.schemas.task import TaskRead
+from app.services.task_context import attach_task_context
 
 DUE_SOON_DAYS = 14
 UPCOMING_DAYS = 60
@@ -75,6 +76,8 @@ def build_dashboard(db: Session, home: Home, today: date | None = None) -> Dashb
     overdue.sort(key=_sort_key)
     due_soon.sort(key=_sort_key)
     upcoming.sort(key=_sort_key)
+
+    attach_task_context(db, overdue + due_soon + upcoming)
 
     recent_logs = db.scalars(
         select(MaintenanceLog)

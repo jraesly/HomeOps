@@ -1041,6 +1041,10 @@ export interface components {
             home_id: string;
             /** Device Id */
             device_id: string | null;
+            /** Device Name */
+            device_name?: string | null;
+            /** Room Name */
+            room_name?: string | null;
             /** Title */
             title: string;
             /** Description */
