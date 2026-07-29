@@ -25,6 +25,7 @@ import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
 import { EmptyView } from '@/components/ui/state-views';
 import { TextField } from '@/components/ui/text-field';
+import { DateField } from '@/components/ui/date-field';
 import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
 import {
@@ -174,10 +175,10 @@ function TaskDetailContent({ task }: { task: Task }) {
               onChangeText={setPerformedBy}
               placeholder="e.g. John"
             />
-            <TextField
-              label="Completed date (YYYY-MM-DD, optional)"
+            <DateField
+              label="Completed date (optional)"
               value={completedDate}
-              onChangeText={setCompletedDate}
+              onChange={setCompletedDate}
               placeholder="Defaults to today"
             />
             <Toggle
@@ -263,11 +264,10 @@ function TaskEdit({ task }: { task: Task }) {
             keyboardType="numeric"
           />
         ) : null}
-        <TextField
-          label="Due date (YYYY-MM-DD, optional)"
+        <DateField
+          label="Due date (optional)"
           value={dueDate}
-          onChangeText={setDueDate}
-          placeholder="2026-07-01"
+          onChange={setDueDate}
         />
         <Button
           label="Save Changes"

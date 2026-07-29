@@ -172,7 +172,7 @@ function ResultGroup({
   if (children.length === 0) return null;
   return (
     <View style={styles.group}>
-      <ThemedText type="smallBold" themeColor="textSecondary">
+      <ThemedText type="smallBold" themeColor="accent">
         {title.toUpperCase()}
       </ThemedText>
       {children}

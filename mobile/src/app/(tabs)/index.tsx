@@ -13,6 +13,7 @@ import { EmptyView } from '@/components/ui/state-views';
 import { Screen } from '@/components/ui/screen';
 import { Spacing } from '@/constants/theme';
 import { currentSeasonSuggestions } from '@/data/seasonal';
+import { useTheme } from '@/hooks/use-theme';
 import { formatCost, formatDate } from '@/utils/format';
 
 export default function DashboardScreen() {
@@ -31,12 +32,18 @@ export default function DashboardScreen() {
 
 function DashboardContent({ data }: { data: Dashboard }) {
   const router = useRouter();
+  const theme = useTheme();
+  const score = data.home_health_score;
+  const scoreColor =
+    score >= 90 ? theme.success : score >= 70 ? theme.warning : theme.danger;
   return (
     <Screen title={data.home_name}>
-      <Card>
+      <Card accentColor={scoreColor}>
         <CardRow>
           <ThemedText type="smallBold">Home Health</ThemedText>
-          <ThemedText type="subtitle">{data.home_health_score}%</ThemedText>
+          <ThemedText type="subtitle" style={{ color: scoreColor }}>
+            {score}%
+          </ThemedText>
         </CardRow>
         <ThemedText type="small" themeColor="textSecondary">
           {data.counts.overdue} overdue · {data.counts.due_soon} due soon ·{' '}
@@ -78,7 +85,7 @@ function DashboardContent({ data }: { data: Dashboard }) {
       {data.low_stock.length > 0 ? (
         <Section title="Low Stock" emptyMessage="">
           {data.low_stock.map((consumable) => (
-            <Card key={consumable.id}>
+            <Card key={consumable.id} accentColor={theme.warning}>
               <CardRow>
                 <ThemedText type="smallBold" style={styles.flexShrink}>
                   {consumable.name}
@@ -149,7 +156,7 @@ function Section({
 }) {
   return (
     <View style={styles.section}>
-      <ThemedText type="smallBold" themeColor="textSecondary">
+      <ThemedText type="smallBold" themeColor="accent">
         {title.toUpperCase()}
       </ThemedText>
       {children.length > 0 ? children : <EmptyView message={emptyMessage} />}

@@ -7,21 +7,29 @@ import { Spacing } from '@/constants/theme';
 type CardProps = {
   children: ReactNode;
   onPress?: () => void;
+  /** Colored left stripe, e.g. status/urgency. */
+  accentColor?: string;
 };
 
 /** A rounded surface card; pressable when `onPress` is provided. */
-export function Card({ children, onPress }: CardProps) {
+export function Card({ children, onPress, accentColor }: CardProps) {
+  const cardStyle = [
+    styles.card,
+    accentColor
+      ? { borderLeftWidth: 4, borderLeftColor: accentColor }
+      : null,
+  ];
   if (onPress) {
     return (
       <Pressable onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-        <ThemedView type="backgroundElement" style={styles.card}>
+        <ThemedView type="backgroundElement" style={cardStyle}>
           {children}
         </ThemedView>
       </Pressable>
     );
   }
   return (
-    <ThemedView type="backgroundElement" style={styles.card}>
+    <ThemedView type="backgroundElement" style={cardStyle}>
       {children}
     </ThemedView>
   );

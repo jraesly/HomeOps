@@ -70,7 +70,7 @@ function RoomsContent({
       ) : (
         groups.map((group) => (
           <View key={group.key} style={styles.group}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
+            <ThemedText type="smallBold" themeColor="accent">
               {group.title.toUpperCase()}
             </ThemedText>
             {group.rooms.map((room) => (
