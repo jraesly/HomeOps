@@ -26,6 +26,18 @@ export default function RootLayout() {
             name="add"
             options={{ title: 'Add', presentation: 'modal' }}
           />
+          <Stack.Screen
+            name="add-device"
+            options={{ title: 'Add Device', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="add-task"
+            options={{ title: 'Add Task', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="add-log"
+            options={{ title: 'Log Maintenance', presentation: 'modal' }}
+          />
         </Stack>
       </ThemeProvider>
     </QueryClientProvider>
