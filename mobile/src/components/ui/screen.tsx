@@ -9,11 +9,13 @@ import { useTheme } from '@/hooks/use-theme';
 type ScreenProps = {
   title?: string;
   subtitle?: string;
+  /** Rendered on the right of the title row (e.g. an add button). */
+  action?: ReactNode;
   children?: ReactNode;
 };
 
 /** Standard scrollable screen wrapper with safe-area + tab insets. */
-export function Screen({ title, subtitle, children }: ScreenProps) {
+export function Screen({ title, subtitle, action, children }: ScreenProps) {
   const safeAreaInsets = useSafeAreaInsets();
   const theme = useTheme();
 
@@ -39,7 +41,10 @@ export function Screen({ title, subtitle, children }: ScreenProps) {
       <View style={styles.inner}>
         {title ? (
           <View style={styles.header}>
-            <ThemedText type="subtitle">{title}</ThemedText>
+            <View style={styles.headerRow}>
+              <ThemedText type="subtitle">{title}</ThemedText>
+              {action}
+            </View>
             {subtitle ? (
               <ThemedText themeColor="textSecondary">{subtitle}</ThemedText>
             ) : null}
@@ -62,4 +67,10 @@ const styles = StyleSheet.create({
     gap: Spacing.four,
   },
   header: { gap: Spacing.one, paddingTop: Spacing.three },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
 });
