@@ -1,35 +1,20 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import {
-  useCreateLog,
-  useCreateTask,
-  useDevice,
-  useDeviceLogs,
-  useDeviceTasks,
-} from '@/api/hooks';
-import { PRIORITIES, RECURRENCE_OPTIONS, TASK_TYPES } from '@/api/enums';
-import type { Device, Priority, RecurrenceType, TaskType } from '@/api/types';
+import { useDevice, useDeviceLogs, useDeviceTasks } from '@/api/hooks';
+import type { Device } from '@/api/types';
 import { ThemedText } from '@/components/themed-text';
 import { QrLabel } from '@/components/qr-label';
 import { TaskCard } from '@/components/task-card';
-import { Button } from '@/components/ui/button';
+import { AddButton } from '@/components/ui/add-button';
 import { Card, CardRow } from '@/components/ui/card';
 import { Chips } from '@/components/ui/chips';
 import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
 import { EmptyView } from '@/components/ui/state-views';
-import { DateField } from '@/components/ui/date-field';
-import { TextField } from '@/components/ui/text-field';
-import { Toggle } from '@/components/ui/toggle';
 import { Spacing } from '@/constants/theme';
-import {
-  describeRecurrence,
-  formatCost,
-  formatDate,
-  humanize,
-} from '@/utils/format';
+import { formatCost, formatDate, humanize } from '@/utils/format';
 
 const SECTIONS = ['Overview', 'Tasks', 'History'] as const;
 type Section = (typeof SECTIONS)[number];
@@ -45,6 +30,7 @@ export default function DeviceDetailScreen() {
 }
 
 function DeviceDetailContent({ device }: { device: Device }) {
+  const router = useRouter();
   const [section, setSection] = useState<Section>('Overview');
   const tasksQuery = useDeviceTasks(device.id);
   const logsQuery = useDeviceLogs(device.id);
@@ -52,10 +38,35 @@ function DeviceDetailContent({ device }: { device: Device }) {
   const tasks = tasksQuery.data ?? [];
   const logs = logsQuery.data ?? [];
 
+  // The header "+" adapts to the visible section.
+  const addAction =
+    section === 'Tasks' ? (
+      <AddButton
+        onPress={() =>
+          router.push(
+            `/add-task?homeId=${device.home_id}&deviceId=${device.id}`,
+          )
+        }
+        label="Add task"
+      />
+    ) : section === 'History' ? (
+      <AddButton
+        onPress={() =>
+          router.push(
+            `/add-log?homeId=${device.home_id}&deviceId=${device.id}`,
+          )
+        }
+        label="Log maintenance"
+      />
+    ) : undefined;
+
   return (
     <>
       <Stack.Screen options={{ title: device.name }} />
-      <Screen title={device.name} subtitle={device.device_type}>
+      <Screen
+        title={device.name}
+        subtitle={device.device_type}
+        action={addAction}>
         <Chips options={SECTIONS} value={section} onChange={setSection} />
 
         {section === 'Overview' ? (
@@ -91,9 +102,8 @@ function DeviceDetailContent({ device }: { device: Device }) {
 
         {section === 'Tasks' ? (
           <View style={styles.section}>
-            <AddTask homeId={device.home_id} deviceId={device.id} />
             {tasks.length === 0 ? (
-              <EmptyView message="No tasks for this device yet." />
+              <EmptyView message="No tasks for this device yet. Tap + to add one." />
             ) : (
               tasks.map((task) => <TaskCard key={task.id} task={task} />)
             )}
@@ -102,7 +112,6 @@ function DeviceDetailContent({ device }: { device: Device }) {
 
         {section === 'History' ? (
           <View style={styles.section}>
-            <AddLog homeId={device.home_id} deviceId={device.id} />
             {logs.length === 0 ? (
               <EmptyView message="No maintenance history yet." />
             ) : (
@@ -149,207 +158,6 @@ function MetaRow({ label, value }: { label: string; value: string }) {
       </ThemedText>
       <ThemedText type="small">{value}</ThemedText>
     </CardRow>
-  );
-}
-
-function AddTask({ homeId, deviceId }: { homeId: string; deviceId: string }) {
-  const [title, setTitle] = useState('');
-  const [taskType, setTaskType] = useState<TaskType>('other');
-  const [priority, setPriority] = useState<Priority>('medium');
-  const [recurrence, setRecurrence] = useState<RecurrenceType>('monthly');
-  const [interval, setInterval] = useState('1');
-  const [dueDate, setDueDate] = useState('');
-  const [estimate, setEstimate] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [requiresParts, setRequiresParts] = useState(false);
-  const [contractorRequired, setContractorRequired] = useState(false);
-  const createTask = useCreateTask(homeId, deviceId);
-
-  const reset = () => {
-    setTitle('');
-    setDueDate('');
-    setEstimate('');
-    setInstructions('');
-    setRequiresParts(false);
-    setContractorRequired(false);
-  };
-
-  const onSubmit = () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    const parsedInterval = Math.max(1, parseInt(interval, 10) || 1);
-    const parsedEstimate = parseInt(estimate, 10);
-    createTask.mutate(
-      {
-        title: trimmed,
-        task_type: taskType,
-        priority,
-        recurrence_type: recurrence,
-        recurrence_interval: parsedInterval,
-        due_date: dueDate.trim() ? dueDate.trim() : null,
-        estimated_minutes: Number.isFinite(parsedEstimate) ? parsedEstimate : null,
-        instructions: instructions.trim() ? instructions.trim() : null,
-        requires_parts: requiresParts,
-        contractor_required: contractorRequired,
-      },
-      { onSuccess: reset },
-    );
-  };
-
-  return (
-    <Card>
-      <ThemedText type="smallBold">Add a task</ThemedText>
-      <TextField
-        label="Task title"
-        value={title}
-        onChangeText={setTitle}
-        placeholder="e.g. Replace sediment filter"
-      />
-
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        Type
-      </ThemedText>
-      <Chips
-        options={TASK_TYPES}
-        value={taskType}
-        onChange={setTaskType}
-        labelFor={humanize}
-      />
-
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        Priority
-      </ThemedText>
-      <Chips
-        options={PRIORITIES}
-        value={priority}
-        onChange={setPriority}
-        labelFor={humanize}
-      />
-
-      <ThemedText type="smallBold" themeColor="textSecondary">
-        Recurrence
-      </ThemedText>
-      <Chips
-        options={RECURRENCE_OPTIONS}
-        value={recurrence}
-        onChange={setRecurrence}
-        labelFor={(value) => describeRecurrence(value, 1)}
-      />
-      {recurrence !== 'none' ? (
-        <TextField
-          label="Interval"
-          value={interval}
-          onChangeText={setInterval}
-          keyboardType="numeric"
-          placeholder="1"
-        />
-      ) : null}
-
-      <DateField
-        label="Due date (optional)"
-        value={dueDate}
-        onChange={setDueDate}
-      />
-      <TextField
-        label="Estimated minutes (optional)"
-        value={estimate}
-        onChangeText={setEstimate}
-        keyboardType="numeric"
-        placeholder="30"
-      />
-      <TextField
-        label="Instructions (optional)"
-        value={instructions}
-        onChangeText={setInstructions}
-        placeholder="How to perform this task"
-      />
-
-      <Toggle
-        label="Requires parts"
-        value={requiresParts}
-        onChange={setRequiresParts}
-      />
-      <Toggle
-        label="Contractor required"
-        value={contractorRequired}
-        onChange={setContractorRequired}
-      />
-
-      <Button
-        label="Add Task"
-        onPress={onSubmit}
-        loading={createTask.isPending}
-        disabled={!title.trim()}
-      />
-    </Card>
-  );
-}
-
-function AddLog({ homeId, deviceId }: { homeId: string; deviceId: string }) {
-  const [title, setTitle] = useState('');
-  const [notes, setNotes] = useState('');
-  const [cost, setCost] = useState('');
-  const [performedBy, setPerformedBy] = useState('');
-  const createLog = useCreateLog(homeId, deviceId);
-
-  const onSubmit = () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    const dollars = parseFloat(cost);
-    createLog.mutate(
-      {
-        title: trimmed,
-        notes: notes.trim() ? notes.trim() : null,
-        cost_cents: Number.isFinite(dollars) ? Math.round(dollars * 100) : null,
-        performed_by: performedBy.trim() ? performedBy.trim() : null,
-      },
-      {
-        onSuccess: () => {
-          setTitle('');
-          setNotes('');
-          setCost('');
-          setPerformedBy('');
-        },
-      },
-    );
-  };
-
-  return (
-    <Card>
-      <ThemedText type="smallBold">Log unplanned maintenance</ThemedText>
-      <TextField
-        label="What happened?"
-        value={title}
-        onChangeText={setTitle}
-        placeholder="e.g. HVAC tech replaced capacitor"
-      />
-      <TextField
-        label="Notes (optional)"
-        value={notes}
-        onChangeText={setNotes}
-        placeholder="Details"
-      />
-      <TextField
-        label="Cost (optional)"
-        value={cost}
-        onChangeText={setCost}
-        keyboardType="numeric"
-        placeholder="250.00"
-      />
-      <TextField
-        label="Performed by (optional)"
-        value={performedBy}
-        onChangeText={setPerformedBy}
-        placeholder="e.g. ACME HVAC"
-      />
-      <Button
-        label="Add Log"
-        onPress={onSubmit}
-        variant="secondary"
-        loading={createLog.isPending}
-        disabled={!title.trim()}
-      />
-    </Card>
   );
 }
 

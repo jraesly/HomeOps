@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
 
 import {
   useConsumables,
-  useCreateConsumable,
   useCurrentHome,
   useUpdateConsumable,
 } from '@/api/hooks';
@@ -11,15 +10,16 @@ import type { Consumable } from '@/api/types';
 import { Badge } from '@/components/badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { AddButton } from '@/components/ui/add-button';
 import { Button } from '@/components/ui/button';
 import { Card, CardRow } from '@/components/ui/card';
 import { QueryBoundary } from '@/components/ui/query-boundary';
 import { Screen } from '@/components/ui/screen';
 import { EmptyView } from '@/components/ui/state-views';
-import { TextField } from '@/components/ui/text-field';
 import { Spacing } from '@/constants/theme';
 
 export default function InventoryScreen() {
+  const router = useRouter();
   const homeQuery = useCurrentHome();
   const home = homeQuery.data;
   const consumablesQuery = useConsumables(home?.id);
@@ -30,11 +30,17 @@ export default function InventoryScreen() {
       query={consumablesQuery}
       gates={[homeQuery]}>
       {(consumables) => (
-        <Screen title="Inventory">
-          {home ? <AddConsumable homeId={home.id} /> : null}
+        <Screen
+          title="Inventory"
+          action={
+            <AddButton
+              onPress={() => router.push('/add?type=consumable')}
+              label="Add consumable"
+            />
+          }>
           <View style={styles.list}>
             {consumables.length === 0 ? (
-              <EmptyView message="No consumables yet. Add filters, salt, batteries…" />
+              <EmptyView message="No consumables yet. Tap + to add filters, salt, batteries…" />
             ) : (
               consumables.map((consumable) => (
                 <ConsumableRow
@@ -114,91 +120,9 @@ function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
   );
 }
 
-function AddConsumable({ homeId }: { homeId: string }) {
-  const [name, setName] = useState('');
-  const [category, setCategory] = useState('');
-  const [quantity, setQuantity] = useState('0');
-  const [threshold, setThreshold] = useState('1');
-  const [reorderUrl, setReorderUrl] = useState('');
-  const create = useCreateConsumable(homeId);
-
-  const onSubmit = () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    create.mutate(
-      {
-        name: trimmed,
-        category: category.trim() ? category.trim() : null,
-        quantity_on_hand: Math.max(0, parseInt(quantity, 10) || 0),
-        reorder_threshold: Math.max(0, parseInt(threshold, 10) || 0),
-        reorder_url: reorderUrl.trim() ? reorderUrl.trim() : null,
-      },
-      {
-        onSuccess: () => {
-          setName('');
-          setCategory('');
-          setQuantity('0');
-          setThreshold('1');
-          setReorderUrl('');
-        },
-      },
-    );
-  };
-
-  return (
-    <Card>
-      <ThemedText type="smallBold">Add a consumable</ThemedText>
-      <TextField
-        label="Name"
-        value={name}
-        onChangeText={setName}
-        placeholder="e.g. 16x25x1 HVAC Filter"
-      />
-      <TextField
-        label="Category (optional)"
-        value={category}
-        onChangeText={setCategory}
-        placeholder="e.g. filter"
-      />
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <TextField
-            label="On hand"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="numeric"
-          />
-        </View>
-        <View style={styles.flex}>
-          <TextField
-            label="Reorder at"
-            value={threshold}
-            onChangeText={setThreshold}
-            keyboardType="numeric"
-          />
-        </View>
-      </View>
-      <TextField
-        label="Reorder URL (optional)"
-        value={reorderUrl}
-        onChangeText={setReorderUrl}
-        placeholder="https://… (one-tap reorder)"
-      />
-      <Button
-        label="Add Consumable"
-        onPress={onSubmit}
-        loading={create.isPending}
-        disabled={!name.trim()}
-      />
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
   list: { gap: Spacing.two },
   flexShrink: { flexShrink: 1 },
-  row: { flexDirection: 'row', gap: Spacing.two },
-  flex: { flex: 1 },
   stepper: { flexDirection: 'row', gap: Spacing.two },
   stepperButton: {
     width: 40,
