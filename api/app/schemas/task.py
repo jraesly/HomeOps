@@ -41,6 +41,10 @@ class TaskRead(ORMModel):
     id: uuid.UUID
     home_id: uuid.UUID
     device_id: uuid.UUID | None
+    # Display context, populated by attach_task_context on list/dashboard
+    # reads; None on write responses (clients refetch lists anyway).
+    device_name: str | None = None
+    room_name: str | None = None
     title: str
     description: str | None
     task_type: TaskType
