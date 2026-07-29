@@ -110,3 +110,80 @@ def test_manual_log_without_task(client: TestClient, device_id: str) -> None:
     )
     assert response.status_code == 201
     assert response.json()["task_id"] is None
+
+
+def test_recurring_task_without_due_date_gets_first_cycle_seeded(
+    client: TestClient, device_id: str
+) -> None:
+    response = client.post(
+        f"/devices/{device_id}/tasks",
+        json={"title": "Flush water heater", "recurrence_type": "quarterly"},
+    )
+    assert response.status_code == 201
+    body = response.json()
+    # No due date supplied → first due date is one interval (3 months) out.
+    assert body["due_date"] is not None
+    due = date.fromisoformat(body["due_date"])
+    today = date.today()
+    delta_days = (due - today).days
+    assert 85 <= delta_days <= 95
+
+
+def test_non_recurring_task_without_due_date_stays_dateless(
+    client: TestClient, device_id: str
+) -> None:
+    response = client.post(
+        f"/devices/{device_id}/tasks",
+        json={"title": "One-off repair", "recurrence_type": "none"},
+    )
+    assert response.status_code == 201
+    assert response.json()["due_date"] is None
+
+
+def test_explicit_due_date_is_not_overridden(
+    client: TestClient, device_id: str
+) -> None:
+    response = client.post(
+        f"/devices/{device_id}/tasks",
+        json={
+            "title": "Replace filter",
+            "recurrence_type": "monthly",
+            "due_date": "2027-01-15",
+        },
+    )
+    assert response.status_code == 201
+    assert response.json()["due_date"] == "2027-01-15"
+
+
+def test_task_lists_include_device_and_room_context(
+    client: TestClient, home_id: str, device_id: str
+) -> None:
+    client.post(
+        f"/devices/{device_id}/tasks",
+        json={"title": "Replace filter", "due_date": "2026-08-01"},
+    )
+
+    for url in (f"/homes/{home_id}/tasks", f"/devices/{device_id}/tasks"):
+        body = client.get(url).json()
+        assert body[0]["device_name"] == "Whole-House Filter"
+        assert body[0]["room_name"] == "Utility Room"
+
+    dashboard = client.get(f"/homes/{home_id}/dashboard").json()
+    tasks = dashboard["overdue"] + dashboard["due_soon"] + dashboard["upcoming"]
+    assert any(
+        t["device_name"] == "Whole-House Filter"
+        and t["room_name"] == "Utility Room"
+        for t in tasks
+    )
+
+
+def test_task_context_handles_roomless_device(
+    client: TestClient, home_id: str
+) -> None:
+    device = client.post(
+        f"/homes/{home_id}/devices", json={"name": "Roof"}
+    ).json()
+    client.post(f"/devices/{device['id']}/tasks", json={"title": "Inspect"})
+    body = client.get(f"/homes/{home_id}/tasks").json()
+    assert body[0]["device_name"] == "Roof"
+    assert body[0]["room_name"] is None
