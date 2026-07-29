@@ -22,6 +22,10 @@ export default function RootLayout() {
           <Stack.Screen name="device/[deviceId]" options={{ title: 'Device' }} />
           <Stack.Screen name="task/[taskId]" options={{ title: 'Task' }} />
           <Stack.Screen name="scan" options={{ title: 'Scan QR' }} />
+          <Stack.Screen
+            name="add"
+            options={{ title: 'Add', presentation: 'modal' }}
+          />
         </Stack>
       </ThemeProvider>
     </QueryClientProvider>
